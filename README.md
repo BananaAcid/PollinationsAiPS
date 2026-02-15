@@ -68,6 +68,6 @@ Get-PollinationsAiAudio "a cat" -save
 
 > [!IMPORTANT]
 > ⭐ The specific documentation for each command
-> - `Get-PollinationsAiText` -> [/docs/text.md](docs/text.md)
-> - `Get-PollinationsAiImage` -> [/docs/image.md](docs/image.md)
-> - `Get-PollinationsAiAudio` -> [/docs/audio.md](docs/audio.md)
+> - `Get-PollinationsAiText` -> [/docs/text.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/text.md)
+> - `Get-PollinationsAiImage` -> [/docs/image.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/image.md)
+> - `Get-PollinationsAiAudio` -> [/docs/audio.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/audio.md)
