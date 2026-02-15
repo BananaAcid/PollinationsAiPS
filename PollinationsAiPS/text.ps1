@@ -222,7 +222,7 @@ Function Get-PollinationsAiText {
         "model" = if (-not $model) { "nova-fast" } else { $model } # since this could be set to ""
         #"json" = "true"  # we always want the response as JSON  #! *JSON-BUG ... But that results in plaintext or json formatted error https://github.com/pollinations/pollinations/issues/7413
 
-        "modalities[]" = "text"
+        # "modalities[]" = "text" #! There seems to be bug with Pollinations where there is only 'text' as modality, Error: {"message":"feature 'modalities' is not currently supported"}}
     } + $settings
 
     # bypasses cloudflare cache
@@ -242,6 +242,11 @@ Function Get-PollinationsAiText {
         }
     }
 
+    #! SPECIAL FIX FOR OpenAI-Audio
+    if ($model -eq "openai-audio") {
+        $fix = "&" + "modalities[]" + "=" + "text"
+    }
+
     $baseUrl = "https://gen.pollinations.ai/{0}" -f $assignedModelList
 
     # stringify query and convert prompt
@@ -249,7 +254,7 @@ Function Get-PollinationsAiText {
     $promptSlug = [uri]::EscapeDataString($content)
 
     # construct URI
-    $uri = "{0}/{1}?{2}" -f $baseUrl, $promptSlug, $queryStr
+    $uri = "{0}/{1}?{2}{3}" -f $baseUrl, $promptSlug, $queryStr, $fix
     Write-Debug "URI: $uri"
 
     # check for PowerShell 7+

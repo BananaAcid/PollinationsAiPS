@@ -243,7 +243,7 @@ Function Get-PollinationsAiAudio {
         }
     }
 
-    #! SPECIAL FIX FOR OpenAI Audio
+    #! SPECIAL FIX FOR OpenAI-Audio
     if ($model -eq "openai-audio") {
         $fix = "&" + "modalities[]" + "=" + "text"
     }
