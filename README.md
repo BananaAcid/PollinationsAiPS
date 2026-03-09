@@ -1,6 +1,6 @@
 # PollinationsAi for PowerShell 
 
-**PollinationsAiPS** is a PowerShell library designed to simplify interactions with the [Pollinations.ai](https://pollinations.ai/) ecosystem. It allows developers and sysadmins to leverage a many powerful AI models for image creation, text generation, and audio processing without leaving the terminal.
+**PollinationsAiPS** is a PowerShell library designed to simplify interactions with the [Pollinations.ai](https://enter.pollinations.ai/) ecosystem. It allows developers and sysadmins to leverage a many powerful AI models for image creation, text generation, and audio processing without leaving the terminal.
 
 **Key Features:**
 * **Image Generation:** Create visuals from text prompts with customizable parameters.
@@ -25,6 +25,11 @@
 ```powershell
 Install-Module -Name PollinationsAiPS -Force
 ```
+### then make it available in the current session (for immediate use, or start a new shell)
+```powershell
+Import-Module -Name PollinationsAiPS
+```
+
 <details>
 <summary>only download it into your current folder</summary>
 
@@ -37,7 +42,7 @@ Save-Module -Name PollinationsAiPS -Path .\   # this creates a subfolder .\Polli
 ```powershell
 "`n`n`$env:POLLINATIONSAI_API_KEY = `"sk_..............`"" >> $PROFILE.CurrentUserAllHosts
 ```
-... after restarting your powershell console, the key will be available.
+... after restarting your powershell console, the key will be available. (`sk_...` is the API key you created at [Pollinations.ai](https://enter.pollinations.ai/))
 
 
 ## Example Usage
@@ -48,6 +53,7 @@ Save-Module -Name PollinationsAiPS -Path .\   # this creates a subfolder .\Polli
 Get-PollinationsAiText "a cat"
 # Ah, a cat – these furry little bundles ...
 ```
+- Aliases: `Get-PollinationsAiText`, `Get-PAiTxt`, `gpat`
 
 ### Generate an image based on the prompt "a cat"
 
@@ -55,6 +61,7 @@ Get-PollinationsAiText "a cat"
 Get-PollinationsAiImage "a cat" -save
 # C:\Users\<username>\AppData\Local\Temp\00974dda-c60c-4c4f-b6bc-4c6e948616d5.jpg
 ```
+- Aliases: `Get-PollinationsAiImage`, `Get-PAiImg`, `gpai`
 
 ### Generate an audio based on the prompt "a cat"
 
@@ -62,7 +69,19 @@ Get-PollinationsAiImage "a cat" -save
 Get-PollinationsAiAudio "a cat" -save
 # C:\Users\<username>\AppData\Local\Temp\00974dda-c60c-4c4f-b6bc-4c6e948616d5.mp3
 ```
+- Aliases: `PollinationsAiAudio`, `Get-PAiAud`, `gpaa`
 
+### List models
+
+```powershell
+Get-PollinationsAiImage -List
+```
+All types support `-List`
+
+#### Filter for free and with image-url as input
+```powershell
+Get-PollinationsAiImage -List -Details |? paid_only -eq $false |? input_modalities -contains image | Format-Table 
+```
 
 ## Documentation (params, examples)
 
