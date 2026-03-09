@@ -188,13 +188,30 @@ Function Get-PollinationsAiAudio {
 
 
     Function getList {
-        $response = Invoke-WebRequest -Uri "https://gen.pollinations.ai/text/models" -Method Get -UseBasicParsing
-        $listText = $response.content | ConvertFrom-Json |? {$_.output_modalities -Contains "audio"} |% {$_ | Add-Member -MemberType NoteProperty -Name ModelsList -Value 'text'; $_} | select -ExcludeProperty 'is_specialized', 'tools'
+        $uris = @(
+            @('text', "https://gen.pollinations.ai/text/models"),
+            @('audio', "https://gen.pollinations.ai/audio/models"),
+            @('image', "https://gen.pollinations.ai/image/models"),
+            @('video', "https://gen.pollinations.ai/video/models")
+        )
 
-        $response = Invoke-WebRequest -Uri "https://gen.pollinations.ai/audio/models" -Method Get -UseBasicParsing
-        $listAudio = $response.content | ConvertFrom-Json |? {$_.output_modalities -Contains "audio"} |% {$_ | Add-Member -MemberType NoteProperty -Name ModelsList -Value 'audio'; $_} | select -ExcludeProperty 'is_specialized', 'tools'
+        $block = [scriptblock]{
+            $Key, $Uri = $_
+            try { $response = Invoke-WebRequest -Uri $Uri -Method Get -UseBasicParsing } catch { $response = $null }
+            
+            if ($null -ne $response) {
+                return $response.content | ConvertFrom-Json |? {$_.output_modalities -Contains "audio"} |% {$_ | Add-Member -MemberType NoteProperty -Name 'ModelsList' -Value $Key; $_} |% {if ($null -eq $_.paid_only) {$_ | Add-Member -MemberType NoteProperty -Name 'paid_only' -Value $false}; $_} | select 'paid_only', * -ExcludeProperty 'is_specialized', 'tools' -ErrorAction SilentlyContinue
+            }
+        }
 
-        return @($listText) + @($listAudio)
+        if ( (Get-Command ForEach-Object).Parameters.ContainsKey('Parallel') ) { # PowerShell 7+
+            $list = $uris |% -Parallel $block
+        }
+        else {
+            $list = $uris |% $block
+        }
+
+        return $list | sort -Property name
     }
 
     if ($listModels -eq $true) {

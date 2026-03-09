@@ -190,9 +190,36 @@ Function Get-PollinationsAiImage {
     }
 
 
+    Function getList {
+        $uris = @(
+            @('text', "https://gen.pollinations.ai/text/models"),
+            @('audio', "https://gen.pollinations.ai/audio/models"),
+            @('image', "https://gen.pollinations.ai/image/models"),
+            @('video', "https://gen.pollinations.ai/video/models")
+        )
+
+        $block = [scriptblock]{
+            $Key, $Uri = $_
+            try { $response = Invoke-WebRequest -Uri $Uri -Method Get -UseBasicParsing } catch { $response = $null }
+            
+            if ($null -ne $response) {
+                return $response.content | ConvertFrom-Json |? {$_.output_modalities -Contains "image"} |% {$_ | Add-Member -MemberType NoteProperty -Name 'ModelsList' -Value $Key; $_} |% {if ($null -eq $_.paid_only) {$_ | Add-Member -MemberType NoteProperty -Name 'paid_only' -Value $false}; $_} | select 'paid_only', * -ExcludeProperty 'is_specialized', 'tools' -ErrorAction SilentlyContinue
+            }
+        }
+
+        if ( (Get-Command ForEach-Object).Parameters.ContainsKey('Parallel') ) { # PowerShell 7+
+            $list = $uris |% -Parallel $block
+        }
+        else {
+            $list = $uris |% $block
+        }
+
+        return $list | sort -Property name
+    }
+
     if ($listModels -eq $true) {
-        $response = Invoke-WebRequest -Uri "https://gen.pollinations.ai/image/models" -Method Get -UseBasicParsing
-        $list = $response.content | ConvertFrom-Json |? {$_.output_modalities -Contains "image"}
+        $list = getList
+
         if ($details) {
             return $list
         }
