@@ -3,6 +3,9 @@ $env:DOTNET_CLI_UI_LANGUAGE="en_US"
 
 
 Test-ModuleManifest -Path ".\PollinationsAiPS\PollinationsAiPS.psd1"
+
+Test-ModuleManifest -Path ".\PollinationsAiPS\PollinationsAiPS.psd1" | Select-Object -expandproperty exportedcommands | format-table
+
 pause
 Publish-Module -Path ".\PollinationsAiPS" -NuGetApiKey $env:NUGET_API_KEY -Verbose
 
