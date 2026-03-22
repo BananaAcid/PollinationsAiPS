@@ -12,7 +12,7 @@
     RootModule = 'PollinationsAiPS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.3.1'
+    ModuleVersion = '1.0.3.2'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Desk', 'Core')
@@ -69,7 +69,7 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('Get-PollinationsAiText', 'Get-PollinationsAiImage', 'Get-PollinationsAiAudio')
+    FunctionsToExport = @('Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiImage', 'Get-PollinationsAiAudio', 'ConvertFrom-AnsiEscapedString')
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()
@@ -78,7 +78,7 @@
     # VariablesToExport = @()
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport = @('Get-PAImg', 'Get-PATxt', 'Get-PAAud', 'gpai', 'gpat', 'gpaa')
+    AliasesToExport = @('Get-PAImg', 'Get-PATxt', 'Get-PATxtX', 'Get-PAAud', 'gpai', 'gpat', 'gpatx', 'gpaa')
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
