@@ -11,16 +11,21 @@
 
 # This is the Root Module that loads all components
 
+. $PSScriptRoot\utils.ps1
+
 . $PSScriptRoot\image.ps1
 Set-Alias -Name Get-PAImg -Value Get-PollinationsAiImage
 
 . $PSScriptRoot\text.ps1
 Set-Alias -Name Get-PATxt -Value Get-PollinationsAiText
 
+. $PSScriptRoot\textEx.ps1
+Set-Alias -Name Get-PATxtX -Value Get-PollinationsAiTextEx
+
 . $PSScriptRoot\audio.ps1
 Set-Alias -Name Get-PAAud -Value Get-PollinationsAiAudio
 
-Export-ModuleMember -Function 'Get-PollinationsAiImage', 'Get-PollinationsAiText', 'Get-PollinationsAiAudio' -Alias 'Get-PAImg', 'Get-PATxt', 'Get-PAAud'
+Export-ModuleMember -Function 'Get-PollinationsAiImage', 'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiAudio', 'ConvertFrom-AnsiEscapedString' -Alias 'Get-PAImg', 'Get-PATxt',  'Get-PATxtX', 'Get-PAAud'
 
 
 # only export alias, if not already used by some other module
@@ -31,6 +36,10 @@ if (-not (test-path Function:gpai)) {
 if (-not (test-path Function:gpat)) {
     Set-Alias -Name gpat -Value Get-PollinationsAiText
     Export-ModuleMember -Alias gpat
+}
+if (-not (test-path Function:gpatx)) {
+    Set-Alias -Name gpatx -Value Get-PollinationsAiTextEx
+    Export-ModuleMember -Alias gpatx
 }
 if (-not (test-path Function:gpaa)) {
     Set-Alias -Name gpaa -Value Get-PollinationsAiAudio

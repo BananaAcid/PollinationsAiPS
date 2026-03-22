@@ -55,6 +55,15 @@ Get-PollinationsAiText "a cat"
 ```
 - Aliases: `Get-PollinationsAiText`, `Get-PAiTxt`, `gpat`
 
+### Generate a text based on the prompt "a cat", and the result in in ANSI colors
+
+```powershell
+Get-PollinationsAiText "a cat. format the output wiht ANSI colors instead of markdown."
+# Ah, a cat – these furry little bundles ...
+```
+- Aliases: `Get-PollinationsAiText`, `Get-PAiTxt`, `gpat`
+
+
 ### Generate an image based on the prompt "a cat"
 
 ```powershell
@@ -83,10 +92,18 @@ All types support `-List`
 Get-PollinationsAiImage -List -Details |? paid_only -eq $false |? input_modalities -contains image | Format-Table 
 ```
 
+#### Get Text and show it with cli colors
+
+```powershell
+Get-PollinationsAiText "tell me about a cat." -bypass -colors
+```
+
 ## Documentation (params, examples)
 
 > [!IMPORTANT]
 > ⭐ The specific documentation for each command
-> - `Get-PollinationsAiText` -> [/docs/text.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/text.md)
+> - `Get-PollinationsAiText` -> [/docs/text.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/text.md) (single line input text, but all model lists)
+> - `Get-PollinationsAiTextEx` -> [/docs/textEx.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/textEx.md) (for multiline texts)
 > - `Get-PollinationsAiImage` -> [/docs/image.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/image.md)
 > - `Get-PollinationsAiAudio` -> [/docs/audio.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/audio.md)
+> - `ConvertFrom-AnsiEscapedString`

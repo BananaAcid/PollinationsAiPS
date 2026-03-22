@@ -1,20 +1,27 @@
-# Ask PollinationsAI for a Text
+# Ask PollinationsAI for a Text for large texts
+
+> [!Important]
+> ## When to use this? (The difference to `Get-PollinationsAiText`)
+>
+>`Get-PollinationsAiText` works across any model list (text, audio, video) by using the URL format for Pollination's simple-Endpoints.
+>
+>`Get-PollinationsAiTextEx` **to support large texts and large texts from files**, it only works for text and audio (text to speech), using the respective PollinationAi's OpenAI compatible endpoints.
 
 ## Usage
 
 ```powershell
-Get-PollinationsAiText "a cat"
+Get-PollinationsAiTextEx "a cat"
 # Ah, a cat – these furry little bundles ...
 ```
 
 ```powershell
-Get-PollinationsAiText -?
-Get-PollinationsAiText [-content] <string> [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache] [-colors]
-Get-PollinationsAiText [-content] <string> -details [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache] [-colors]
-Get-PollinationsAiText [-content] <string> -save [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
-Get-PollinationsAiText [-content] <string> -out <string> [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
-Get-PollinationsAiText -listModels [-details]
-Get-PollinationsAiText -getSettingsDefault
+Get-PollinationsAiTextEx -?
+Get-PollinationsAiTextEx [-content] <string> [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache] [-colors]
+Get-PollinationsAiTextEx [-content] <string> -details [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache] [-colors]
+Get-PollinationsAiTextEx [-content] <string> -save [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
+Get-PollinationsAiTextEx [-content] <string> -out <string> [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
+Get-PollinationsAiTextEx -listModels [-details]
+Get-PollinationsAiTextEx -getSettingsDefault
 ```
 
 **Yes:** Optional `<CommonParameters>` is always supported.
@@ -26,7 +33,7 @@ Install-Module -Name PollinationsAiPS -Force
 ```
 
 > [!NOTE]
-> ➡️ Interchangeably use `Get-PollinationsAiText`, `Get-PAiTxt`, `gpat` (aliases)
+> ➡️ Interchangeably use `Get-PollinationsAiTextEx`, `Get-PAiTxtX`, `gpatx` (aliases)
 >
 > ⭐ After installation, they can be used globally.
 
@@ -47,21 +54,20 @@ Save-Module -Name PollinationsAiPS -Path .\   # this creates a subfolder .\Polli
 ## Params
 
 > [!IMPORTANT]
-> Only **single line text input** is possible as prompt. But all model lists can be used (**text, audio/speech, image, video**) as long as the selected model has text as input modality.
+> Multi line text input is possible as prompt. But **only text and audio/speech** model lists can be used as long as the selected model has text as input modality.
 >
-> For **multiline input** (only **text and audio/speech**) use:
+> For all model lists use:
 >
-> `Get-PollinationsAiTextEx` -> [/docs/textEx.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/textEx.md)
+> `Get-PollinationsAiText` -> [/docs/textEx.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/text.md)
 
 | arg | default | example | desc |
 | --- | --- | --- | --- |
-| `<string>` <br>or `-content <string>` <br>or `-prompt <string>` | (required) | `"Some Text-Prompt"` | The **single line** prompt for the content to be created. |
+| `<string>` <br>or `-content <string>` <br>or `-prompt <string>` | (required) | `"Some Text-Prompt"` | The **multi line** prompt for the content to be created. |
 | `-model <string>` | `"nova-fast"` | `"gemini"` | The model to use. [Currently available on PollinationsAI](https://enter.pollinations.ai/api/docs#tag/genpollinationsai/GET/image/{prompt}.query.model). |
 | `-POLLINATIONSAI_API_KEY <string>` <br>or `-key <string>` | `$env:POLLINATIONSAI_API_KEY` | `sk_12345678901234567890` | Use a PollonationsAI API Key - if left set to "", `$env:POLLINATIONSAI_API_KEY` is being checked. **Note: Add the API key to your environment variables.** |
 | `-settings <hashtable>` <br>or `-set <hashtable>` | [see below](#file-ask-pollinations_text-ps1-L159-L162) | `@{seed = 1234567890}` | A hashtable of settings passed to the Pollinations AI API. |
 | `-bypassCache` <br>or `-nocache` | | | Only bypasses the cloudflare cache, resulting in a newly generated response. Without, the first request will generate the result, each subsequent request will result in the cached response. |
-| `-colors` <br>or `-ansi` | `$env:POLLINATIONSAIPS_COLORS`\|`$false` | | Get colored console output. (Adds a string to the prompt to request ANSI formatting instead of Markdown.) |
-| `-assignedModelList` | | `text` | The endpoint the model is from to use for audio generation (text or audio model list). Set to either `text` or `audio` to prevent 2 extra API calls for checking model lists|
+| `-colors` <br>or `-ansi` | `$env:POLLINATIONSAIPS_COLORS`\|`$false` | | Get colored console output. (Adds a string to the prompt to request ANSI formatting instead of Markdown.) || `-assignedModelList` | | `text` | The endpoint the model is from to use for audio generation (text or audio model list). Set to either `text` or `audio` to prevent 2 extra API calls for checking model lists|
 | `-out <string>` | | `answer.txt` | The local path to save the generated text and returns the path. |
 | `-save` | | | Will save to the system temp folder and returns the path. |
 | `-details` | | | Does not save but and returns `@{ Headers; Content; Uri; [FilePath;] [FormattedContent]` } (`FilePath` only if `-save` or `-out` was used, `FormattedContent` only if `-colors` was used) |
@@ -101,9 +107,24 @@ Save-Module -Name PollinationsAiPS -Path .\   # this creates a subfolder .\Polli
 ### Generate a text based on the prompt "a cat"
 
 ```powershell
-Get-PollinationsAiText "a cat"
+Get-PollinationsAiTextEx "a cat"
 # Ah, a cat – these furry little bundles ...
 ```
+
+### Generate a text based a file
+
+```powershell
+$prompt = Get-Content .\somefile.txt
+Get-PollinationsAiTextEx $prompt
+```
+
+### Generate a text based a file with a question
+
+```powershell
+$prompt = "Summarize the following content in 1 paragraph:" + "`n`n`n" + $(gc .\somefile.txt)
+Get-PollinationsAiTextEx $prompt
+```
+
 
 ### Look at some models and test a prompt
 

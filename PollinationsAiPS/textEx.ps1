@@ -3,10 +3,10 @@
 
 <#
     .SYNOPSIS
-    Generate text using the Pollinations AI API.
+    Generate text using the Pollinations AI API, for multiline texts.
 
     .DESCRIPTION
-    Generate text based on the given prompt using the Pollinations AI API, for single line input text.
+    Generate text based on the given prompt using the Pollinations AI API, by using the OpenAI compatible REST Endpoints.
 
     .PARAMETER content
     The prompt for the text.
@@ -94,7 +94,7 @@
     Error:
         throws @{ StatusCode = <error code>; Message = <error message> }
 #>
-Function Get-PollinationsAiText {
+Function Get-PollinationsAiTextEx {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingCmdletAliases', '', Scope = 'Function', Target = '*')]
     [CmdletBinding(DefaultParameterSetName="None")]
     param (
@@ -190,26 +190,28 @@ Function Get-PollinationsAiText {
     }
 
     end {
-        if ($null -eq $contentIn -or $contentIn -match "[\r\n]") {
-            # even escaping to %0A is not supported by the endpoint
-            Write-Error "Using last line as prompt. Only single line input text is supported, join all lines WITHOUT newlines or use Get-PollinationsAi-TextEx instead."
-        }
+        $content = $contentIn
 
 
         # ---------------------------------------------------------------
 
-        
+
+        if ($content -is [System.Array]) {
+            $content = ($content -join "`n")
+        } elseif ($null -ne $content -and $content -isnot [string]) {
+            $content = $content.ToString()
+        }
+
+
         $ANSI_FORMATTING = "Format the output with ANSI colors and ANSI formatting, directly for the console/terminal without a code fence (instead of using Markdown), and do not talk about it. "
 
         <#
         .LINK
-        https://enter.pollinations.ai/api/docs#tag/genpollinationsai/GET/text/{prompt}
+        https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-text-generation/POST/v1/chat/completions
         #>
         $defaultSettingsByApi = @{
-            seed = 0 # 0 == random, max == 9007199254740991
-            system = ""
+            seed = 0 # 0 == random, max == 9007199254740991, -1 == ?? is in the pollination docs's example
             temperature = 1.0
-            voice = "alloy" # only for openai-audio, see https://platform.openai.com/docs/guides/text-to-speech#voice-options
         }
 
 
@@ -221,9 +223,9 @@ Function Get-PollinationsAiText {
         Function getList {
             $uris = @(
                 @('text', "https://gen.pollinations.ai/text/models"),
-                @('audio', "https://gen.pollinations.ai/audio/models"),
-                @('image', "https://gen.pollinations.ai/image/models"),
-                @('video', "https://gen.pollinations.ai/video/models")
+                @('audio', "https://gen.pollinations.ai/audio/models")
+                # @('image', "https://gen.pollinations.ai/image/models")
+                # @('video', "https://gen.pollinations.ai/video/models")
             )
 
             $block = [scriptblock]{
@@ -267,20 +269,20 @@ Function Get-PollinationsAiText {
 
 
         #* we do not merge the defaults into this settings object by default, because the generated URL query would be longer then necessary
-        $querySettings = @{
-            "model" = if (-not $model) { "nova-fast" } else { $model } # since this could be set to ""
-            #"json" = "true"  # we always want the response as JSON  #! *JSON-BUG ... But that results in plaintext or json formatted error https://github.com/pollinations/pollinations/issues/7413
+        $requestSettings = @{
+            'model' = if (-not $model) { "nova-fast" } else { $model } # since this could be set to '
 
-            # "modalities[]" = "text" #! There seems to be bug with Pollinations where there is only 'text' as modality, Error: {"message":"feature 'modalities' is not currently supported"}}
+            # 'modalities[]' = "text" #! There seems to be bug with Pollinations where there is only 'text' as modality, Error: {"message":"feature 'modalities' is not currently supported"}}
         } + $settings
 
         # bypasses cloudflare cache
         if ($bypassCache) {
-            $querySettings["cacheBuster"] = [string](Get-Date).Ticks + (Get-Random)
+            $requestSettings['cacheBuster'] = [string](Get-Date).Ticks + (Get-Random)
         }
 
         $headers = @{
-            "Authorization" = "Bearer $POLLINATIONSAI_API_KEY"
+            'Authorization' = "Bearer $POLLINATIONSAI_API_KEY"
+            'Content-Type' = "application/json"
         }
 
         if ($assignedModelList -eq "") {
@@ -293,35 +295,60 @@ Function Get-PollinationsAiText {
 
         #! SPECIAL FIX FOR OpenAI-Audio
         if ($model -eq "openai-audio") {
-            $fix = "&" + "modalities[]" + "=" + "text"
+            $requestSettings.modalities = @(, "text")
         }
 
-        $baseUrl = "https://gen.pollinations.ai/{0}" -f $assignedModelList
+        $contentCombined = if ($Colors) { $ANSI_FORMATTING + "`n`n" + $content } else { $content }
 
-        # stringify query and convert prompt
-        $queryStr = ($querySettings.GetEnumerator() |% { [uri]::EscapeDataString($_.Key) + "=" + [uri]::EscapeDataString($_.Value) } ) -join "&"
-        $contentCombined = if ($Colors) { $ANSI_FORMATTING + ' ' + $content } else { $content }
-        $promptSlug = [uri]::EscapeDataString($contentCombined) # newline escaping to %0A is not supported by the endpoint !
+        switch ($assignedModelList) {
+            'text' {
+                $requestUrl = "https://gen.pollinations.ai/v1/chat/completions"
+                $requestSettings = @{
+                    'messages' = @(
+                        @{
+                            'content' = $contentCombined
+                            'role' = "user" # 'system'
+                            'name' = ""     # ??? in documents, but missing description
+                            'cache_control' = @{
+                                'type' = "ephemeral"
+                            }
+                        }
+                    )
+                } + $requestSettings + $settings
+            }
+            'audio' {
+                $requestUrl = "https://gen.pollinations.ai/v1/audio/speech"
+                $requestSettings = @{
+                    'input' = $contentCombined
+                    'voice' = "alloy"  # only for openai-audio, see https://platform.openai.com/docs/guides/text-to-speech#voice-options
+                    'response_format' = "mp3"
 
-        # construct URI
-        $uri = "{0}/{1}?{2}{3}" -f $baseUrl, $promptSlug, $queryStr, $fix
-        Write-Debug "URI: $uri"
+                } + $requestSettings + $settings
+            }
+            default {
+                throw "Generating from other model lists then text/audio is not supported." 
+            }
+        }
+
+        $requestSettingsBody = $requestSettings | ConvertTo-Json -Compress -Depth 100 # 5 is needed, but the src above might change in the future
 
         # check for PowerShell 7+
         $canSkip = (Get-Command Invoke-WebRequest).Parameters.ContainsKey('SkipHttpErrorCheck')
 
         if ($canSkip) {
-            $response = Invoke-WebRequest -Uri $uri -Method Get -Headers $headers -UseBasicParsing     -SkipHttpErrorCheck    # get the error message in the response
+            $response = Invoke-WebRequest -Uri $requestUrl -Method Post -Body $requestSettingsBody -Headers $headers -UseBasicParsing     -SkipHttpErrorCheck    # get the error message in the response
         }
         else {
             # Fallback for PowerShell 5.1 -->  does only show the status code, since the response is dropped by Invoke-WebRequest
             try {
-                $response = Invoke-WebRequest -Uri $uri -Method Get -Headers $headers -UseBasicParsing     -ErrorAction Stop
+                $response = Invoke-WebRequest -Uri $requestUrl -Method Post -Body $requestSettingsBody -Headers $headers -UseBasicParsing     -ErrorAction Stop
             }
             catch {
                 $response = @{ StatusCode = $_.Exception.Response.StatusCode.Value__; Message = $_.Exception.Response.StatusCode }
             }
         }
+
+
 
         # check for errors
         if ($response.StatusCode -ne 200) {
@@ -332,17 +359,21 @@ Function Get-PollinationsAiText {
             $global:LASTEXITCODE = $response.StatusCode
             throw [PSCustomObject]$err
         }
-        #! *JSON-BUG ... The json param does not work. It results in plaintext or json formatted error https://github.com/pollinations/pollinations/issues/7413
-        # elseif ($response.Headers["Content-Type"] -notlike "*/json") {
-        #     Write-Error $response.Content
-
-        #     # set error code
-        #     $global:LASTEXITCODE = 200
-        #     throw [PSCustomObject]@{ StatusCode = $response.StatusCode; Message = $response.Content }
-        # }
-
 
         $ret = ""
+
+
+        # unwrap the response text
+        #$response.content
+
+        Function unwrapResponseText {
+            param ($res)
+
+            $resContent = $res.content | ConvertFrom-Json
+            $r = $resContent.choices | select -last 1 | select -ExpandProperty message
+
+            return $r.content # , $resContent.usage
+        }
 
         $isContentBytes = $response -and $response.Content -and $response.Content.GetType().Name -eq "Byte[]"
 
@@ -378,7 +409,7 @@ Function Get-PollinationsAiText {
             }
             else {
                 # save the text
-                $response.Content | Out-File -FilePath $filepath
+                unwrapResponseText($response) | Out-File -FilePath $filepath
             }
 
             $ret = $filepath
@@ -388,11 +419,13 @@ Function Get-PollinationsAiText {
             $ret = if ($ret) { @{ FilePath = $ret } } else { @{} } #filename available
             $ret = $ret +  @{
                 Headers = $response.Headers
-                Content = $response.Content
-                Uri = $uri
+                Content = if ($isContentBytes) { $response.Content } else { unwrapResponseText($response) }
             }
+            if (-not $isContentBytes) { $ret += @{
+                FullContent = $response.Content | ConvertFrom-Json
+            }}
             if (-not $isContentBytes -and $colors) { $ret += @{
-                FormattedContent = ($response.Content | ConvertFrom-AnsiEscapedString)
+                FormattedContent = (unwrapResponseText($response) | ConvertFrom-AnsiEscapedString)
             }}
         }
 
@@ -403,7 +436,7 @@ Function Get-PollinationsAiText {
             if ($isContentBytes -or $colors -eq $false) {
                 return $response.Content
             } elseif ($colors) {
-                return ($response.Content | ConvertFrom-AnsiEscapedString)
+                return (unwrapResponseText($response) | ConvertFrom-AnsiEscapedString)
             }
         }
     }
