@@ -196,13 +196,6 @@ Function Get-PollinationsAiTextEx {
         # ---------------------------------------------------------------
 
 
-        if ($content -is [System.Array]) {
-            $content = ($content -join "`n")
-        } elseif ($null -ne $content -and $content -isnot [string]) {
-            $content = $content.ToString()
-        }
-
-
         $ANSI_FORMATTING = "Format the output with ANSI colors and ANSI formatting, directly for the console/terminal without a code fence (instead of using Markdown), and do not talk about it. "
 
         <#
@@ -433,10 +426,12 @@ Function Get-PollinationsAiTextEx {
             return $ret
         }
         else {
-            if ($isContentBytes -or $colors -eq $false) {
+            if ($isContentBytes) {
                 return $response.Content
             } elseif ($colors) {
                 return (unwrapResponseText($response) | ConvertFrom-AnsiEscapedString)
+            } else {
+                return unwrapResponseText($response)
             }
         }
     }

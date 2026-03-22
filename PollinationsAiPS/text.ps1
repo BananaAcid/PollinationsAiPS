@@ -184,16 +184,17 @@ Function Get-PollinationsAiText {
             $contentIn += ($content -join "`n")
         } elseif ($null -ne $content -and $content -isnot [string]) {
             $contentIn += $content.ToString()
-        } else {
+        } elseif ($null -ne $content) {
             $contentIn += $content + "`n"
         }
     }
 
     end {
-        if ($null -eq $contentIn -or $contentIn -match "[\r\n]") {
+        if ($contentIn.trim() -match "[\r\n]") {
             # even escaping to %0A is not supported by the endpoint
             Write-Error "Using last line as prompt. Only single line input text is supported, join all lines WITHOUT newlines or use Get-PollinationsAi-TextEx instead."
         }
+        $content = $contentIn.trim() -split "`n" | select -Last 1 # just to be save
 
 
         # ---------------------------------------------------------------
@@ -301,7 +302,7 @@ Function Get-PollinationsAiText {
         # stringify query and convert prompt
         $queryStr = ($querySettings.GetEnumerator() |% { [uri]::EscapeDataString($_.Key) + "=" + [uri]::EscapeDataString($_.Value) } ) -join "&"
         $contentCombined = if ($Colors) { $ANSI_FORMATTING + ' ' + $content } else { $content }
-        $promptSlug = [uri]::EscapeDataString($contentCombined) # newline escaping to %0A is not supported by the endpoint !
+        $promptSlug = [uri]::EscapeDataString($contentCombined) # newline escaping to %0A is not supported by the endpoint or emtpy lines or something like that !
 
         # construct URI
         $uri = "{0}/{1}?{2}{3}" -f $baseUrl, $promptSlug, $queryStr, $fix
