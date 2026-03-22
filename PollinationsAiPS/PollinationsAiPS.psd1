@@ -12,10 +12,10 @@
     RootModule = 'PollinationsAiPS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.3'
+    ModuleVersion = '1.0.3.1'
 
     # Supported PSEditions
-    # CompatiblePSEditions = @()
+    CompatiblePSEditions = @('Desk', 'Core')
 
     # ID used to uniquely identify this module
     GUID = '50087a3b-a865-4cb4-b2bc-9f269503588e'
