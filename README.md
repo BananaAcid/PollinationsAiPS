@@ -7,7 +7,8 @@
 * **Text Generation:** Interface with LLMs for chat and text completion.
 * **Audio/Voice:** Support for text-to-speech and speech-to-text (depending on API availability).
 * **Pipeline Friendly:** Designed to work with PowerShell objects and pipes.
-* **Easy Integration:** Simple to use in your powershell workflows.
+* **Easy Integration:** Simple to use in your powershell workflows (.NET Framework and .NET Core) and Azure.
+* **Cross Platform:** Just runs on Windows, macOS, and Linux. And Docker / Podman. And more.
 
 ... in pure Powershell 5+ / 7+ (Win, Linux, OSX, Docker, ...) -- PollinationsAI can be used for free (only needs registration, but no moneys)
 
