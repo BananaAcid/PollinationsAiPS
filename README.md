@@ -39,11 +39,34 @@ Save-Module -Name PollinationsAiPS -Path .\   # this creates a subfolder .\Polli
 </details>
 
 ### You might want to add your key as environment variable to your profile
-```powershell
-"`n`n`$env:POLLINATIONSAI_API_KEY = `"sk_..............`"" >> $PROFILE.CurrentUserAllHosts
-```
-... after restarting your powershell console, the key will be available. (`sk_...` is the API key you created at [Pollinations.ai](https://enter.pollinations.ai/))
 
+#### [Bring-Your-Own-Key](https://enter.pollinations.ai/api/docs#tag/-bring-your-own-pollen) method - opens a popup for you to accept to generate a temporary key and adds it to your profile (persists)
+```powershell
+Get-PollinationsAiByok -Add
+```
+
+#### [Bring-Your-Own-Key](https://enter.pollinations.ai/api/docs#tag/-bring-your-own-pollen), but only temporary (until you close the terminal/session)
+```powershell
+Get-PollinationsAiByok -Init
+```
+
+
+#### or manually:
+ -  ```powershell
+    "`n`n`$env:POLLINATIONSAI_API_KEY = `"sk_..............`"" >> $PROFILE.CurrentUserAllHosts
+    ```
+    ... after restarting your powershell console, the key will be available. (`sk_...` is the API key you created at [Pollinations.ai](https://enter.pollinations.ai/))
+
+## Documentation (params, examples)
+
+> [!IMPORTANT]
+> ⭐ The specific documentation for each command
+> - `Get-PollinationsAiText` -> [/docs/text.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/text.md) (single line input text, but all model lists)
+> - `Get-PollinationsAiTextEx` -> [/docs/textEx.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/textEx.md) (for multiline texts)
+> - `Get-PollinationsAiImage` -> [/docs/image.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/image.md)
+> - `Get-PollinationsAiAudio` -> [/docs/audio.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/audio.md)
+> - `ConvertFrom-AnsiEscapedString`
+> - `Get-PollinationsAiByok`, `Get-PAByok`
 
 ## Example Usage
 
@@ -55,13 +78,27 @@ Get-PollinationsAiText "a cat"
 ```
 - Aliases: `Get-PollinationsAiText`, `Get-PAiTxt`, `gpat`
 
-### Generate a text based on the prompt "a cat", and the result in in ANSI colors
+### Generate a text based on the prompt "a cat", and show it with cli colors / cli formatting
 
 ```powershell
-Get-PollinationsAiText "a cat. format the output wiht ANSI colors instead of markdown."
+Get-PollinationsAiText "a cat." -colors
 # Ah, a cat – these furry little bundles ...
 ```
 - Aliases: `Get-PollinationsAiText`, `Get-PAiTxt`, `gpat`
+
+### Generate a text based on a multiline prompt
+
+```powershell
+Get-Content somefile.txt | Get-PollinationsAiTextEx
+# ...
+Get-PollinationsAiTextEx (Get-Content somefile.txt)
+# ...
+Get-PollinationsAiTextEx @("line 1", "line 2")
+# ...
+Get-PollinationsAiTextEx "line 1 `n line 2"
+# ...
+```
+- Aliases: `Get-PollinationsAiTextEx`, `Get-PAiTxtX`, `gpatx`
 
 
 ### Generate an image based on the prompt "a cat"
@@ -91,19 +128,3 @@ All types support `-List`
 ```powershell
 Get-PollinationsAiImage -List -Details |? paid_only -eq $false |? input_modalities -contains image | Format-Table 
 ```
-
-#### Get Text and show it with cli colors
-
-```powershell
-Get-PollinationsAiText "tell me about a cat." -bypass -colors
-```
-
-## Documentation (params, examples)
-
-> [!IMPORTANT]
-> ⭐ The specific documentation for each command
-> - `Get-PollinationsAiText` -> [/docs/text.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/text.md) (single line input text, but all model lists)
-> - `Get-PollinationsAiTextEx` -> [/docs/textEx.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/textEx.md) (for multiline texts)
-> - `Get-PollinationsAiImage` -> [/docs/image.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/image.md)
-> - `Get-PollinationsAiAudio` -> [/docs/audio.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/audio.md)
-> - `ConvertFrom-AnsiEscapedString`
