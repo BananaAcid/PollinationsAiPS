@@ -21,6 +21,18 @@
 > 
 > See [Discussion](https://github.com/pollinations/pollinations/discussions/7436)
 
+## Just go for it
+```powershell
+Install-Module -Name PollinationsAiPS -Force ; Import-Module -Name PollinationsAiPS ; Get-PollinationsAiByok -Add | Out-Null
+
+gpat "a cat"
+# ... a text about a cat ...
+
+gpai "a cat" -save
+# an url to file with a cat
+```
+
+
 ## Quickly install it (*install, update*)
 
 ```powershell
