@@ -67,7 +67,8 @@ Get-PollinationsAiByok -Init
 > - `Get-PollinationsAiImage` -> [/docs/image.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/image.md)
 > - `Get-PollinationsAiAudio` -> [/docs/audio.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/audio.md)
 > - `ConvertFrom-AnsiEscapedString`
-> - `Get-PollinationsAiByok`, `Get-PAByok`
+> - `Get-PollinationsAiByok`, **Alias**: `Get-PAByok`, `Get-PollinationsAiDeviceToken`
+> - `Get-PollinationsAiByokWeb` (Old method, but can be used to redirect to a website that receives the confirmation/apikey)
 
 ## Example Usage
 

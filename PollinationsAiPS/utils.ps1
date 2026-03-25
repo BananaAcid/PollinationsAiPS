@@ -95,7 +95,7 @@ Function ConvertFrom-AnsiEscapedString {
     }
 }
 
-Function Get-PollinationsAiByok {
+Function Get-PollinationsAiByokWeb {
     [CmdletBinding()]
     param(
         [string]
@@ -232,7 +232,7 @@ Function Get-PollinationsAiByok {
         }
     }
 
-    if ($add) {
+    if ($Add) {
         if ($null -ne $apiKey) {   
             "`n`n`$env:POLLINATIONSAI_API_KEY = `"$($apiKey)`"" >> $PROFILE.CurrentUserAllHosts
             Write-Host "API Key added as `$env:POLLINATIONSAI_API_KEY to $($PROFILE.CurrentUserAllHosts)" -ForegroundColor Green
@@ -241,9 +241,159 @@ Function Get-PollinationsAiByok {
             Write-Error "API Key not added to environment. Failed to capture API Key."
         }
     }
-    if ($null -ne $apiKey -and ($add -or $init) ) {
+    if ($null -ne $apiKey -and ($Add -or $Init) ) {
         $env:POLLINATIONSAI_API_KEY = $apiKey # activate in session
     }
 
     return $apiKey
+}
+
+
+
+
+# https://datatracker.ietf.org/doc/html/rfc8628
+# https://enter.pollinations.ai/api/docs#tag/-bring-your-own-pollen -> 🖥️ CLIs & Headless Apps (Device Flow)
+# .Alias Get-PollinationsAiDeviceToken
+function Get-PollinationsAiByok {
+    param(
+        [string]
+        [Parameter(Mandatory=$false, ParameterSetName='None')]
+        [Parameter(Mandatory=$false, ParameterSetName='Add')]
+        [Parameter(Mandatory=$false, ParameterSetName='Init')]
+        [Alias("AppKey")]
+        [Alias("Key")]
+        $ClientId = "pk_2ZpluqiajXYP5XfG",
+
+        [switch]
+        [Parameter(Mandatory=$true, ParameterSetName='Add')]
+        $Add = $false, # Add the API Key to the profile and init within the current environment
+
+        [switch]
+        [Parameter(Mandatory=$true, ParameterSetName='Init')]
+        $Init = $false, # if not added, still init the API key within the current environment
+
+
+        [int]
+        [Parameter(Mandatory=$false, ParameterSetName='None')]
+        [Parameter(Mandatory=$false, ParameterSetName='Add')]
+        [Parameter(Mandatory=$false, ParameterSetName='Init')]
+        $TimeoutSeconds = 0,
+
+        [int]
+        [Parameter(Mandatory=$false, ParameterSetName='None')]
+        [Parameter(Mandatory=$false, ParameterSetName='Add')]
+        [Parameter(Mandatory=$false, ParameterSetName='Init')]
+        $IntervalSeconds = 1
+    )
+
+    $BaseUrl = "https://enter.pollinations.ai/api/device"
+
+    # initiate device code request - get handshake token and activation dialog url
+    Write-Host "Requesting device code..." -ForegroundColor Cyan
+    $deviceInfo = Invoke-RestMethod -Uri "$BaseUrl/code" -Method Post -Body (@{
+        client_id = $ClientId
+        scope     = "generate"
+    } | ConvertTo-Json) -ContentType "application/json"
+
+    # extra info for the user
+    Write-Host "`nVisit: $($deviceInfo.verification_uri_complete)" -ForegroundColor Yellow
+    Write-Host "Code: $($deviceInfo.user_code)" -ForegroundColor Green
+    Write-Host "Waiting for confirmation... Press ESC to cancel." -ForegroundColor Gray
+
+    
+    # open browser with device code and pollen confirmation
+    Start-Process $deviceInfo.verification_uri_complete
+
+    $accessToken = $null
+    $canceled = $false
+    $lastRequestTime =[DateTime]::MinValue
+    $startTime = Get-Date
+    $intervalSeconds = if ($IntervalSeconds -gt 0) { $IntervalSeconds } else { [double]$deviceInfo.interval }
+    $expirationTime = if ($TimeoutSeconds -gt 0) { $TimeoutSeconds } else { [double]$deviceInfo.expires_in }
+
+    # waiting for API
+    while ($null -eq $accessToken) {
+        $currentTime = Get-Date
+
+        # check for total expiration
+        if (($currentTime - $startTime).TotalSeconds -gt $expirationTime) {
+            Write-Warning "`nAuthorization request timed out after $expirationTime seconds."
+            return $null
+        }
+
+        # check for ESC key
+        if ([System.Console]::KeyAvailable) { #  always true: $Host.UI.RawUI.KeyAvailable
+            $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+            # on esc
+            if ($key.Character -eq [ConsoleKey]::Escape) {
+                $canceled = $true
+                break
+            }
+        }
+
+        # API polling
+        if (($currentTime - $lastRequestTime).TotalSeconds -ge $intervalSeconds) {
+            $lastRequestTime = Get-Date 
+
+            try {
+                $tokenResponse = Invoke-RestMethod -Uri "$BaseUrl/token" -Method Post -Body (@{
+                    device_code = $deviceInfo.device_code
+                } | ConvertTo-Json) -ContentType "application/json" -ErrorAction Stop
+                
+                $accessToken = $tokenResponse.access_token
+            }
+            catch {
+                # handle HTTP error responses
+                if ($_.ErrorDetails -and $_.ErrorDetails.Message) {
+                    try {
+                        # Parse the error JSON
+                        $errorData = $_.ErrorDetails.Message | ConvertFrom-Json
+                        
+                        if ($errorData.error -eq "access_denied") {
+                            Write-Host "" # newline, since warning eats it
+                            Write-Warning "Access denied by the user."
+                            return $null
+                        }
+                        elseif ($errorData.error -eq "expired_token") {
+                            Write-Error "`nThe device code has expired."
+                            return $null
+                        }
+                        elseif ($errorData.error -eq "authorization_pending" -or $errorData.error.code -eq "NOT_FOUND") {
+                            # Expected states while waiting for user action. Do nothing.
+                        }
+                    }
+                    catch {
+                        # JSON parsing failed, safely ignore and continue polling
+                    }
+                }
+            }
+        }
+
+        # keep responsiveness high and CPU usage low
+        Start-Sleep -Milliseconds 100
+    }
+
+    if ($canceled) {
+        Write-Host "`nOperation canceled by user." -ForegroundColor Red
+        return $null
+    }
+
+    if ($accessToken) {
+        Write-Host "`nSuccessfully retrieved access token!" -ForegroundColor Green
+    }
+
+    if ($Add) {
+        if ($null -ne $accessToken) {   
+            "`n`n`$env:POLLINATIONSAI_API_KEY = `"$($accessToken)`"" >> $PROFILE.CurrentUserAllHosts
+            Write-Host "API Key added as `$env:POLLINATIONSAI_API_KEY to $($PROFILE.CurrentUserAllHosts)" -ForegroundColor Green
+        }
+        else {
+            Write-Error "API Key not added to environment. Failed to retrieve access token."
+        }
+    }
+    if ($null -ne $accessToken -and ($Add -or $Init) ) {
+        $env:POLLINATIONSAI_API_KEY = $accessToken # activate in session
+    }
+
+    return $accessToken
 }

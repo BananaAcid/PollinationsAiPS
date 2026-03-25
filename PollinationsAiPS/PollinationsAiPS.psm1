@@ -13,6 +13,7 @@
 
 . $PSScriptRoot\utils.ps1
 Set-Alias -Name Get-PAByok -Value Get-PollinationsAiByok
+Set-Alias -Name Get-PollinationsAiDeviceToken -Value Get-PollinationsAiByok
 
 . $PSScriptRoot\image.ps1
 Set-Alias -Name Get-PAImg -Value Get-PollinationsAiImage
@@ -26,7 +27,7 @@ Set-Alias -Name Get-PATxtX -Value Get-PollinationsAiTextEx
 . $PSScriptRoot\audio.ps1
 Set-Alias -Name Get-PAAud -Value Get-PollinationsAiAudio
 
-Export-ModuleMember -Function 'Get-PollinationsAiImage', 'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiAudio', 'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok' -Alias 'Get-PAImg', 'Get-PATxt',  'Get-PATxtX', 'Get-PAAud', 'Get-PAByok'
+Export-ModuleMember -Function 'Get-PollinationsAiImage', 'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiAudio', 'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb' -Alias 'Get-PAImg', 'Get-PATxt',  'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'Get-PollinationsAiDeviceToken'
 
 
 # only export alias, if not already used by some other module
