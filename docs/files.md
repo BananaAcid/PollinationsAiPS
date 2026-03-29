@@ -15,13 +15,19 @@ Done! Hash: 98dxd8x473x9ex21 | Url: https://media.pollinations.ai/98dxd8x473x9ex
 
 ## Possibilities
 
+file item = hash and url, filesize, width and height, content-type
+
 - `cd` into the drive `PollinationsAI:`
 - `dir` or `ls` any file
-    - `ls | select *` will show the hash and url, filesize, width and height, content-type
+    - `ls | select *` will show all file items and their properties
+- `gi` any file, to get the file item
 - `cp` or `copy` into or out of the drive
 - `rm` or `del` any file
 
 <!-- - `mv` or `rename` any file -->
 
-- `Set-PollinationsAiDrive [-Name <string>]` will reconnect the drive, optionally with another name (e.g. 'Polly' because its shorter)
-- `Copy-PollinationsAiFile <file>` | `cpaf <file>` will upload it
+| command | alias | description
+| --- | --- | --- |
+`Set-PollinationsAiDrive [-Name <string>]` | `Set-PADrive [-Name <string>]` | will reconnect the drive, optionally with another name (e.g. 'Polly' because its shorter)
+`Get-PollinationsAiDrive` | `Get-PADrive` | will get the current PSDrive object
+`Copy-PollinationsAiFile <file>`  | `Copy-PAFile <file>` or<br> `cpaf <file>` | will upload it, returns the file item

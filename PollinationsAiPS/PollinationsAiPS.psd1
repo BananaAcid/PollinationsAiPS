@@ -69,7 +69,7 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiImage', 'Get-PollinationsAiAudio', 'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb', 'Set-PollinationsAiDrive', 'Copy-PollinationsAiFile')
+    FunctionsToExport = @('Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiImage', 'Get-PollinationsAiAudio', 'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb', 'Set-PollinationsAiDrive', 'Get-PollinationsAiDrive', 'Copy-PollinationsAiFile')
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()
@@ -78,7 +78,7 @@
     # VariablesToExport = @()
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport = @('Get-PAImg', 'Get-PATxt', 'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'gpai', 'gpat', 'gpatx', 'gpaa', 'Get-PollinationsAiDeviceToken', 'cpaf')
+    AliasesToExport = @('Get-PAImg', 'Get-PATxt', 'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'gpai', 'gpat', 'gpatx', 'gpaa', 'Get-PollinationsAiDeviceToken', 'Set-PADrive', 'Get-PADrive', 'Copy-PAFile', 'cpaf')
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()

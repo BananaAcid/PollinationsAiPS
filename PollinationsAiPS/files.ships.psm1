@@ -78,7 +78,7 @@ class PollinationsState {
     static [void] Add([PollinationsFile]$file) {
         # Check if hash AND name already exist
         $duplicate = [PollinationsState]::Files | Where-Object { 
-            $_.Hash -eq $file.Hash -and $_.Name -eq $file.Name 
+            $_.Hash -eq $file.Hash -or $_.Name -eq $file.Name 
         }
 
         if ($duplicate) {

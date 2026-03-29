@@ -48,8 +48,11 @@ if (-not (test-path Function:gpaa)) {
 }
 
 . $PSScriptRoot\files.ps1
+Set-Alias -Name Set-PADrive -Value Set-PollinationsAiDrive
+Set-Alias -Name Get-PADrive -Value Get-PollinationsAiDrive
+Set-Alias -Name Copy-PAFile -Value Copy-PollinationsAiFile
 
-Export-ModuleMember -Function 'Set-PollinationsAiDrive', 'Copy-PollinationsAiFile'
+Export-ModuleMember -Function 'Set-PollinationsAiDrive', 'Get-PollinationsAiDrive', 'Copy-PollinationsAiFile' -Alias 'Set-PADrive', 'Get-PADrive', 'Copy-PAFile'
 
 if (-not (test-path Function:cpaf)) {
     Set-Alias -Name cpaf -Value Copy-PollinationsAiFile

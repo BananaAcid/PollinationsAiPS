@@ -62,10 +62,13 @@ $script:lastDriveName = "";
 
 Function Set-PollinationsAiDrive {
     param(
-        $Name = "PollinationsAI"
+        $Name = "PollinationsAI",
+        [switch]$Silent = $false
     )
     if (-not $env:POLLINATIONSAI_API_KEY) {
-        Write-Error "Please set the `$env:POLLINATIONSAI_API_KEY environment variable to use the PollinationsAI Drive.`nYou can use 'Get-PollinationsAiByok -Add'. See the Readme for more information.`nThen restart the session or retry with 'Set-PollinationsAiDrive'"
+        if (-not $Silent) {
+            throw "Please set the `$env:POLLINATIONSAI_API_KEY environment variable to use the PollinationsAI Drive. You can use 'Get-PollinationsAiByok -Add'. See the Readme for more information. Then restart the session or retry with 'Set-PollinationsAiDrive'"
+        }
         return
     }
 
@@ -77,6 +80,17 @@ Function Set-PollinationsAiDrive {
     New-PSDrive -Name $Name -PSProvider SHiPS -Root "files.ships#PollinationsRoot" -Description "PollinationsAI Cloud Storage" -Scope Global    
 }
 
+Function Get-PollinationsAiDrive {
+    if ($script:lastDriveName) {
+        return Get-PSDrive -Name $script:lastDriveName
+    }
+    else {
+        return $null
+    }
+}
+
+# Create the drive, but only if there is an api key
+Set-PollinationsAiDrive -Silent | Out-Null
 
 
 
@@ -128,6 +142,8 @@ function Copy-PollinationsAiFile {
     } else {
         Write-Host "Done!" -ForegroundColor Green
     }
+
+    return $newItem
 }
 
 function global:Copy-Item {
@@ -203,10 +219,14 @@ function global:Remove-Item {
                         $item.RemoveItem()
                     }
                 } else {
-                    Microsoft.PowerShell.Management\Remove-Item -Path $p @RemainingArgs
+                    $params = @{ Path = $p }
+                    if ($RemainingArgs) { Microsoft.PowerShell.Management\Remove-Item @params @RemainingArgs }
+                    else { Microsoft.PowerShell.Management\Remove-Item @params }
                 }
             } else {
-                Microsoft.PowerShell.Management\Remove-Item -Path $p @RemainingArgs
+                $params = @{ Path = $p }
+                if ($RemainingArgs) { Microsoft.PowerShell.Management\Remove-Item @params @RemainingArgs }
+                else { Microsoft.PowerShell.Management\Remove-Item @params }
             }
         }
     }
