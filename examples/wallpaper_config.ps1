@@ -4,5 +4,8 @@ $Content = "Make it glow in {Color} and fill background with {BackgroundColor} a
 $ImageUri = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Banana_on_whitebackground.jpg/1280px-Banana_on_whitebackground.jpg"
 
 #$Color = "yellow"  # if not set, it will get a random color
+
+#$Colors = "red", "blue"  # limit the colors
+
 $Force = $false
 $Debug = $true  # set -Debug from within code

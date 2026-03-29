@@ -46,6 +46,8 @@ param (
         
         [hashtable]$Settings = @{},         # in case more params are needed (model specific), see: https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-image-generation/GET/image/{prompt}
         [string]$Path = "$PSScriptRoot\wallpapers",   # "$env:TEMP\wallpapers"  - Best: "$([Environment]::GetFolderPath("MyPictures"))\wallpapers"
+
+        [string[]]$Colors = @("red", "green", "blue", "black", "white", "orange", "purple", "golden", "silver", "bronze", "metallic"), # some colors for the random selection
         [string][Alias("Prompt")]$Content = "Change the logo to be in {Color} with tint in {Color}. Fill background with a uniform {BackgroundColor}.",   # the system prompt, in case someone wants to change it
 
         [switch]$Test,                      # will not actually change the wallpaper
@@ -93,8 +95,7 @@ Function Invoke-UpdateWallpaper {
 
 
     # list of colors for random selection
-    $colors = @("red", "green", "blue", "black", "white", "orange", "purple", "golden", "silver", "bronze", "metallic")
-    $Color = If ($Color) {$Color} else {Get-Random $colors}
+    $Color = If ($Color) {$Color} else {Get-Random $Colors}
 
     # get the first free model
     If ($model -eq "?") {
