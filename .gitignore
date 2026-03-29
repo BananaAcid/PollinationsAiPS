@@ -1,4 +1,6 @@
 .history
+examples/wallpapers
+examples/set-wallpaper.ps1
 
 ## A streamlined .gitignore for modern .NET projects
 ## including temporary files, build results, and

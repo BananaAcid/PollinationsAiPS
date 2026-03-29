@@ -176,7 +176,9 @@ $models |% { Get-PollinationsAiImage "a cat" -model $_ -out imgs\cat_$_.jpg }
     - save it as `set-wallpaper.ps1`
     - ⚠️ but **DO NOT** include the last line that says `Set-WallPaper -Image "C:\Wallpaper\Background.jpg" -Style Fit`
         
-2. Your script `update.wallpaper.ps1`
+2. Your script `Update-Wallpaper.ps1`
+    > [!TIP]
+    > Production ready version (more complete) in [/examples/Update-Wallpaper.ps1](https://github.com/BananaAcid/PollinationsAiPS/blob/main/examples/Update-Wallpaper.ps1)
     - Prerequisites:
         - Function `Get-PollinationsAiImage` is installed or saved, if saved only, you need to add `Import-Module .\PollinationsAiPS\1.0.0\PollinationsAiPS` after `param`
         - `$env:POLLINATIONSAI_API_KEY = "sk_..."` is set 
@@ -244,8 +246,12 @@ $models |% { Get-PollinationsAiImage "a cat" -model $_ -out imgs\cat_$_.jpg }
     $taskName = "ChangeWallpaperHourlyAtLogon"
     $taskDescription = "Runs update.wallpaper.ps1 every hour after user login"
     
+    # Check if pwsh.exe (preferred) or powershell.exe is available
+    $interpreter = Get-Command pwsh.exe, powershell.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
+
     # Define the action (start powershell.exe with arguments)
-    $action = New-ScheduledTaskAction -Execute "pwsh.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File $scriptPath"
+    #TEST: $action = New-ScheduledTaskAction -Execute "pwsh.exe" -Argument "-noExit -ExecutionPolicy Bypass -File `"$scriptPath`""
+    $action = New-ScheduledTaskAction -WorkingDirectory (Split-Path -Path $scriptPath) -Execute "C:\Windows\System32\conhost.exe" -Argument "--headless `"$interpreter`" -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$scriptPath`" "
     
     # Define the trigger (at logon, repeating every hour indefinitely)
     # The -AtLogOn trigger doesn't directly support RepetitionInterval in one line
@@ -262,8 +268,8 @@ $models |% { Get-PollinationsAiImage "a cat" -model $_ -out imgs\cat_$_.jpg }
     $task = Get-ScheduledTask -TaskName $taskName
     
     # Set the repetition interval and duration
-    $task.Triggers.Repetition.Interval = (New-TimeSpan -Hours 1)
-    $task.Triggers.Repetition.Duration = ([System.TimeSpan]::MaxValue) # Indefinite duration
+    $task.Triggers.Repetition.Interval = "PT$([Math]::Round((New-TimeSpan -Hours 1).TotalMinutes, 0))M"
+    $task.Triggers.Repetition.StopAtDurationEnd = $false # Indefinite duration
     
     # Update the task with the modified trigger settings
     $task | Set-ScheduledTask
