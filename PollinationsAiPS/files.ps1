@@ -54,6 +54,9 @@ API KEY : multiple drives should be possible, with different API keys. Also chan
     - can a drive be initialized with a key?  like an WebDav/FTP Drive would work?
 
 
+Fork with missing fnctions
+    https://github.com/Scal-Human/SHiPS
+
 
 #>
 
