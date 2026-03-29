@@ -16,6 +16,25 @@ renaming a file in the PSDrive ?  -> like downloading-renaming-online_Delete-upl
 Uploaded Name is the same as destination name in copy?
 
 
+copy to subfolder:
+    error on copy
+        copy ..\examples\wallpapers\wp_black-white.jpg PollinationsAi:\test\black-white.jpg
+        Copy-Item: D:\GitHub\PollinationsAiPS\PollinationsAiPS\files.ps1:199:24
+        Line |
+        199 |  …            else { Microsoft.PowerShell.Management\Copy-Item @params }
+            |                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            | Source and destination path did not resolve to the same provider.
+
+
+    only this works in upload - but nothing shows up in the directory (does nothing):
+        Copy-PollinationsAiFile ..\examples\wallpapers\wp_black-white.jpg PollinationsAi:\test\black-white.jpg
+        Uploading wp_black-white.jpg to PollinationsAi:\test as black-white.jpg...
+        Done!
+
+    ... Copy-Item should use get-item for downloading
+
+
+
 
 get item by hash, even if it is not in $Files (just get it) -Check if media exists -> https://enter.pollinations.ai/api/docs#tag/-media-storage/HEAD/{hash}
     curl 'https://media.pollinations.ai/{hash}' \
