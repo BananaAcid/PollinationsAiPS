@@ -181,21 +181,21 @@ class PollinationsRoot : SHiPSDirectory {
         $this.FetchMetadata($newFile)
 
         # This reads only the header metadata without loading the full image into RAM
-        if ($contentType -like "image/*" -or $contentType -like "video/*" -and $newFile.Width -eq 0 -and $newFile.Height -eq 0) {
-            $stream = $null
-            try {
-                $stream = [File]::OpenRead($localFilePath)
-                $decoder = [BitmapDecoder]::Create($stream, "None", "Default")
+        # if ($contentType -like "image/*" -or $contentType -like "video/*" -and $newFile.Width -eq 0 -and $newFile.Height -eq 0) {
+        #     $stream = $null
+        #     try {
+        #         $stream = [File]::OpenRead($localFilePath)
+        #         $decoder = [BitmapDecoder]::Create($stream, "None", "Default")
 
-                $newFile.Width = $decoder.Frames[0].PixelWidth                  # !   is this working ?
-                $newFile.Height = $decoder.Frames[0].PixelHeight
+        #         $newFile.Width = $decoder.Frames[0].PixelWidth                  # !   is this working ?
+        #         $newFile.Height = $decoder.Frames[0].PixelHeight
 
-                Write-Verbose "Successfully read image metadata from $localFilePath"
-            } catch { 
-                Write-Warning "Failed to read image metadata from $localFilePath"
-            }
-            finally { if ($stream) { $stream.Close(); $stream.Dispose() } }
-        }
+        #         Write-Verbose "Successfully read image metadata from $localFilePath"
+        #     } catch { 
+        #         Write-Warning "Failed to read image metadata from $localFilePath"
+        #     }
+        #     finally { if ($stream) { $stream.Close(); $stream.Dispose() } }
+        # }
 
         [PollinationsState]::Add($newFile)
         #[PollinationsState]::Add($newFile)
@@ -284,7 +284,7 @@ class PollinationsFile : SHiPSLeaf {
 }
 
 # Tell the state where to save the files.(hashedkey).json
-[PollinationsState]::StorageDir = $PSScriptRoot
+#[PollinationsState]::StorageDir = $PSScriptRoot   .............. fall back to $env:TEMP
 
 # Re-format PowerShell's 'ls' default view so you instantly see Hashes!
 Update-TypeData -TypeName "PollinationsFile" -DefaultDisplayPropertySet "Name", "Hash", "Size", "ContentType" -Force

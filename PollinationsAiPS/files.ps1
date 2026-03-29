@@ -3,10 +3,7 @@
 TODO:
 
 Update-TypeData DOES not reformat the output of "ls" 
-
-
-
-it never saves the $files file in in the $env:temp 
+-- see? https://github.com/rchaganti/PSConfDrive/blob/master/PSConfDrive.Format.ps1xml
 
 
 renaming a file in the PSDrive ?  -> like downloading-renaming-online_Delete-uploading  (for Content-Deposition to work)
