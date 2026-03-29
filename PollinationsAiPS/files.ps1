@@ -121,7 +121,7 @@ function Copy-PollinationsAiFile {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true, Position=0)][string]$Path,
-        [Parameter(Mandatory=$false, Position=1)][string]$Destination = "PollinationsAI:\"
+        [Parameter(Mandatory=$false, Position=1)][string]$Destination = "$($script:lastDriveName):\"
     )
 
     if (-not (Test-Path $Path)) { throw "Cannot find path '$Path' because it does not exist."}
@@ -134,7 +134,7 @@ function Copy-PollinationsAiFile {
     if ($Destination -match "\.[a-zA-Z0-9]+$") {
         $name = Split-Path $Destination -Leaf
         $targetPath = Split-Path $Destination -Parent
-        if ([string]::IsNullOrWhiteSpace($targetPath)) { $targetPath = "PollinationsAI:\" }
+        if ([string]::IsNullOrWhiteSpace($targetPath)) { $targetPath = "$($script:lastDriveName):\" }
     }
 
     Write-Host "Uploading $(Split-Path $fullPath -Leaf) to $targetPath as $name..." -ForegroundColor Cyan
@@ -178,8 +178,8 @@ function global:Copy-Item {
             $resolvedPath = try { (Resolve-Path $p -ErrorAction SilentlyContinue).Path } catch { $p }
             $resolvedDest = try { (Resolve-Path $Destination -ErrorAction SilentlyContinue).Path } catch { $Destination }
 
-            $isUpload = ($null -ne $resolvedDest) -and ($resolvedDest -match "^PollinationsAI:")
-            $isDownload = ($null -ne $resolvedPath) -and ($resolvedPath -match "^PollinationsAI:")
+            $isUpload = ($null -ne $resolvedDest) -and ($resolvedDest -match ("^" + $script:lastDriveName + ":"))
+            $isDownload = ($null -ne $resolvedPath) -and ($resolvedPath -match ("^" + $script:lastDriveName + ":"))
             
             if ($isUpload -and -not $isDownload) {
                 try {
@@ -229,7 +229,7 @@ function global:Remove-Item {
     process {
         foreach ($p in $Path) {
             $resolvedPath = try { (Resolve-Path $p -ErrorAction SilentlyContinue).Path } catch { $p }
-            if ($resolvedPath -match "^PollinationsAI:") {
+            if ($resolvedPath -match ("^" + $script:lastDriveName + ":")) {
                 # Force SHiPS to call the class's RemoveItem() method
                 $item = Get-Item $resolvedPath -ErrorAction SilentlyContinue
                 if ($item -and $item.psobject.Methods.Match('RemoveItem').Count -gt 0) {
