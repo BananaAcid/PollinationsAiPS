@@ -98,7 +98,6 @@ Set-PollinationsAiDrive -Silent | Out-Null
 .SYNOPSIS
     Helper function to mimic Copy-Item behavior for PollinationsAI drive.
 #>
-
 function Copy-PollinationsAiFile {
     [CmdletBinding()]
     param(
@@ -231,24 +230,3 @@ function global:Remove-Item {
         }
     }
 }
-
-
-# Function Invoke-PollinationsAIDrive {
-#     # Create the drive
-#     New-PSDrive -Name MyData -PSProvider SHiPS -Root "filesships#MyRoot"
-# }   
-
-<#
-
-# Create the drive
-# The root format is "ModuleName#ClassNameOfRoot"
-New-PSDrive -Name MyData -PSProvider SHiPS -Root "MyModule#MyRoot"
-
-# Now you can use it!
-cd MyData:\
-dir
-
-cd C:\
-
-Remove-PSDrive -Name MyData
-#>
