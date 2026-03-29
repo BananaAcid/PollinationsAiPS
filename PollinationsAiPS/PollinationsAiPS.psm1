@@ -29,7 +29,6 @@ Set-Alias -Name Get-PAAud -Value Get-PollinationsAiAudio
 
 Export-ModuleMember -Function 'Get-PollinationsAiImage', 'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiAudio', 'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb' -Alias 'Get-PAImg', 'Get-PATxt',  'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'Get-PollinationsAiDeviceToken'
 
-
 # only export alias, if not already used by some other module
 if (-not (test-path Function:gpai)) {
     Set-Alias -Name gpai -Value Get-PollinationsAiImage
@@ -46,4 +45,13 @@ if (-not (test-path Function:gpatx)) {
 if (-not (test-path Function:gpaa)) {
     Set-Alias -Name gpaa -Value Get-PollinationsAiAudio
     Export-ModuleMember -Alias gpaa
+}
+
+. $PSScriptRoot\files.ps1
+
+Export-ModuleMember -Function 'Set-PollinationsAiDrive', 'Copy-PollinationsAiFile'
+
+if (-not (test-path Function:cpaf)) {
+    Set-Alias -Name cpaf -Value Copy-PollinationsAiFile
+    Export-ModuleMember -Alias cpaf
 }
