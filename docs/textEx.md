@@ -1,4 +1,4 @@
-# Ask PollinationsAI for a Text for large texts
+# Ask PollinationsAI with large input Texts
 
 > [!Important]
 > ## When to use this? (The difference to `Get-PollinationsAiText`)
