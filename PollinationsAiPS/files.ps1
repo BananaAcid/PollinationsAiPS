@@ -2,6 +2,12 @@
 
 TODO:
 
+
+
+BUG: downloading / GC
+
+
+
 Update-TypeData DOES not reformat the output of "ls" 
 -- see? https://github.com/rchaganti/PSConfDrive/blob/master/PSConfDrive.Format.ps1xml
 
@@ -24,7 +30,7 @@ copy to subfolder:
 
 
     only this works in upload - but nothing shows up in the directory (does nothing):
-        Copy-PollinationsAiFile ..\examples\wallpapers\wp_black-white.jpg PollinationsAi:\test\black-white.jpg
+        Add-PollinationsAiFile ..\examples\wallpapers\wp_black-white.jpg PollinationsAi:\test\black-white.jpg
         Uploading wp_black-white.jpg to PollinationsAi:\test as black-white.jpg...
         Done!
 
@@ -46,13 +52,6 @@ get item by hash, even if it is not in $Files (just get it) -Check if media exis
 
 
 
-a function that can be piped into line by line with a hash or an array of hashes, that will get the metadata and add it to $files ( https://enter.pollinations.ai/api/docs#tag/-media-storage/HEAD/{hash} )
-    ... to be able to load a "backup" of hashes
-
-
-API KEY : multiple drives should be possible, with different API keys. Also changing the $env API KEY, the current drive should sill work with the key it got initialized with.
-    - can a drive be initialized with a key?  like an WebDav/FTP Drive would work?
-
 
 Fork with missing fnctions
     https://github.com/Scal-Human/SHiPS
@@ -60,9 +59,12 @@ Fork with missing fnctions
 
 #>
 
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingCmdletAliases', '', Justification="For me there is no readability issue", Scope = 'Function', Target = '*')]
+param()
 
-Add-Type -AssemblyName PresentationCore
-Add-Type -AssemblyName WindowsBase
+
+#*IMG  Add-Type -AssemblyName PresentationCore
+#*IMG  Add-Type -AssemblyName WindowsBase
 
 
 # Import the SHiPS module
@@ -77,31 +79,33 @@ If (-not (Get-Module -Name SHiPS -ListAvailable)) {
 Import-Module $PSScriptRoot\files.ships.psm1
 
 
-$script:lastDriveName = "";
+$script:lastDriveName = $null
 
-Function Set-PollinationsAiDrive {
+Function Enable-PollinationsAiDrive {
     param(
         $Name = "PollinationsAI",
         [switch]$Silent = $false
     )
     if (-not $env:POLLINATIONSAI_API_KEY) {
         if (-not $Silent) {
-            throw "Please set the `$env:POLLINATIONSAI_API_KEY environment variable to use the PollinationsAI Drive. You can use 'Get-PollinationsAiByok -Add'. See the Readme for more information. Then restart the session or retry with 'Set-PollinationsAiDrive'"
+            throw "Please set the `$env:POLLINATIONSAI_API_KEY environment variable to use the PollinationsAI Drive. You can use 'Get-PollinationsAiByok -Add'. See the Readme for more information. Then restart the session or retry with 'Enable-PollinationsAiDrive'"
         }
         return
     }
 
-    if ($script:lastDriveName) {
-        Remove-PSDrive -Name $lastDriveName -ErrorAction SilentlyContinue
+    $pollinationsDrive = Get-PSDrive |? Root -eq "files.ships#PollinationsRoot"
+    if ($pollinationsDrive) {
+        $pollinationsDrive | Remove-PSDrive -ErrorAction Stop  # might be in use, e.g. is current path
     }
+
     $script:lastDriveName = $Name
     
-    New-PSDrive -Name $Name -PSProvider SHiPS -Root "files.ships#PollinationsRoot" -Description "PollinationsAI Cloud Storage" -Scope Global    
+    New-PSDrive -Name $Name -PSProvider SHiPS -Root "files.ships#PollinationsRoot" -Description "PollinationsAI Cloud Storage" -Scope Global
 }
 
 Function Get-PollinationsAiDrive {
     if ($script:lastDriveName) {
-        return Get-PSDrive -Name $script:lastDriveName
+        return Get-PSDrive |? Root -eq "files.ships#PollinationsRoot"
     }
     else {
         return $null
@@ -109,7 +113,7 @@ Function Get-PollinationsAiDrive {
 }
 
 # Create the drive, but only if there is an api key
-Set-PollinationsAiDrive -Silent | Out-Null
+Enable-PollinationsAiDrive -Silent | Out-Null
 
 
 
@@ -117,11 +121,11 @@ Set-PollinationsAiDrive -Silent | Out-Null
 .SYNOPSIS
     Helper function to mimic Copy-Item behavior for PollinationsAI drive.
 #>
-function Copy-PollinationsAiFile {
+function Add-PollinationsAiFileOld {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true, Position=0)][string]$Path,
-        [Parameter(Mandatory=$false, Position=1)][string]$Destination = "$($script:lastDriveName):\"
+        [Parameter(Mandatory=$false, Position=1)][string]$Destination = "$($script:lastDriveName):\\"
     )
 
     if (-not (Test-Path $Path)) { throw "Cannot find path '$Path' because it does not exist."}
@@ -137,11 +141,19 @@ function Copy-PollinationsAiFile {
         if ([string]::IsNullOrWhiteSpace($targetPath)) { $targetPath = "$($script:lastDriveName):\" }
     }
 
+    if ($Destination -match "^$($script:lastDriveName):[\\/]") {
+        # remove drive root, see if there is subfolder
+        $relative = $Destination.Substring($script:lastDriveName.Length + 1).TrimStart('\','/')
+        if ($relative -match "[\\/]" -and $relative -ne "") {
+            throw "Subfolders are not supported in PollinationsAI drive. Specify a filename only."
+        }
+    }
+
     Write-Host "Uploading $(Split-Path $fullPath -Leaf) to $targetPath as $name..." -ForegroundColor Cyan
     
     $newItem = $null
     try {
-        $newItem = New-Item -Path $targetPath -Name $name -ItemType "File" -Value $fullPath -ErrorAction Stop
+        $newItem = New-Item -Path $targetPath -Name $name -ItemType "File" -Value $fullPath -ErrorAction Stop  # one of the the few suppoored ShiPS methods
     }
     catch [System.Management.Automation.MethodInvocationException] {
         throw $_
@@ -164,6 +176,45 @@ function Copy-PollinationsAiFile {
     return $newItem
 }
 
+function Get-PollinationsAiFileOld {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, Position=0)][string]$Source,
+        [Parameter(Mandatory=$false)][string]$Destination
+    )
+
+    # Accept either name or full drive path
+    if ($Source -like "$($script:lastDriveName):*") {
+        $Source = $Source.Substring($($script:lastDriveName).Length + 1).TrimStart('\','/')
+    }
+
+    # Use Get-Item to resolve the file object from the drive
+    $fileObj = Get-Item "$($script:lastDriveName):\$Source" -ErrorAction Stop
+
+    if (-not $fileObj) {
+        throw "File '$Source' not found in PollinationsAI drive."
+    }
+
+    if (-not $Destination) {
+        $Destination = Join-Path (Get-Location).Path $fileObj.Name
+    } elseif (Test-Path $Destination -PathType Container) {
+        $Destination = Join-Path $Destination $fileObj.Name
+    }
+
+    Write-Host "Downloading $($fileObj.Name) to $Destination..." -ForegroundColor Cyan
+
+    # Use Get-Content to retrieve the content via SHiPS provider
+    $content = Get-Content $fileObj -ErrorAction Stop
+
+    # Save the byte array to file
+    [IO.File]::WriteAllBytes($Destination, $content)
+
+    Write-Host "Download Complete!" -ForegroundColor Green
+
+    return (Resolve-Path $Destination)
+}
+
+
 function global:Copy-Item {
     [CmdletBinding(DefaultParameterSetName='Path', SupportsShouldProcess=$true)]
     param(
@@ -173,40 +224,20 @@ function global:Copy-Item {
     )
     
     process {
+        $currentDrive = (Get-Location).Drive.Name
         foreach ($p in $Path) {
-            # Resolve the path to check if it's a PollinationsAI path (handles relative paths while inside the drive)
-            $resolvedPath = try { (Resolve-Path $p -ErrorAction SilentlyContinue).Path } catch { $p }
-            $resolvedDest = try { (Resolve-Path $Destination -ErrorAction SilentlyContinue).Path } catch { $Destination }
 
-            $isUpload = ($null -ne $resolvedDest) -and ($resolvedDest -match ("^" + $script:lastDriveName + ":"))
-            $isDownload = ($null -ne $resolvedPath) -and ($resolvedPath -match ("^" + $script:lastDriveName + ":"))
-            
-            if ($isUpload -and -not $isDownload) {
-                try {
-                    Copy-PollinationsAiFile -Path $p -Destination $Destination
-                } catch {
-                    Write-Error $_
-                }
-            } elseif ($isDownload -and -not $isUpload) {
-                $fileName = Split-Path $resolvedPath -Leaf
-                $destPath = $Destination
-                
-                if (-not $Destination) {
-                    $destPath = Join-Path (Get-Location).Path $fileName
-                } elseif (Test-Path $Destination -PathType Container) { 
-                    $destPath = Join-Path $Destination $fileName 
-                }
-                
-                Write-Host "Downloading $fileName to $destPath..." -ForegroundColor Cyan
-                [PollinationsState]::Load()
-                $fileObj = [PollinationsState]::Files | Where-Object { $_.Name -eq $fileName } | Select-Object -First 1
-                
-                if ($fileObj) {
-                    Invoke-WebRequest -Uri $fileObj.Url -OutFile $destPath
-                    Write-Host "Download Complete!" -ForegroundColor Green
-                } else {
-                    Write-Error "File '$fileName' not found in cache. Ensure you use 'ls' to refresh the drive first."
-                }
+            $sourceInDrive = $p -like "$($script:lastDriveName):*" -or ($currentDrive -eq $script:lastDriveName -and $p -notmatch '^[A-Za-z]:\\')
+            $destInDrive   = $Destination -like "$($script:lastDriveName):*"
+
+            if ($sourceInDrive -and -not $destInDrive) {
+                # internal drive -> local path (download)
+                try { Get-PollinationsAiFile -Source $p -Destination $Destination } catch { Write-Error $_ }
+            } elseif (-not $sourceInDrive -and $destInDrive) {
+                # local -> internal drive (upload)
+                try { Add-PollinationsAiFile -Path $p -Destination $Destination } catch { Write-Error $_ }
+            } elseif ($sourceInDrive -and $destInDrive) {
+                Write-Error "PollinationsAI -> PollinationsAI copy is not supported."
             } else {
                 # Fix for positional parameter error: Use splatting to avoid passing nulls or empty arrays
                 $params = @{ Path = $p }
@@ -226,6 +257,7 @@ function global:Remove-Item {
         [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)][string[]]$Path,
         [Parameter(ValueFromRemainingArguments=$true)][Object[]]$RemainingArgs
     )
+    
     process {
         foreach ($p in $Path) {
             $resolvedPath = try { (Resolve-Path $p -ErrorAction SilentlyContinue).Path } catch { $p }
@@ -249,3 +281,4 @@ function global:Remove-Item {
         }
     }
 }
+

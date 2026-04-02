@@ -28,6 +28,6 @@ file item = hash and url, filesize, width and height, content-type
 
 | command | alias | description
 | --- | --- | --- |
-`Set-PollinationsAiDrive [-Name <string>]` | `Set-PADrive [-Name <string>]` | will reconnect the drive, optionally with another name (e.g. 'Polly' because its shorter)
+`Enable-PollinationsAiDrive [-Name <string>]` | `Set-PADrive [-Name <string>]` | will reconnect the drive, optionally with another name (e.g. 'Polly' because its shorter)
 `Get-PollinationsAiDrive` | `Get-PADrive` | will get the current PSDrive object
-`Copy-PollinationsAiFile <file>`  | `Copy-PAFile <file>` or<br> `cpaf <file>` | will upload it, returns the file item
+`Add-PollinationsAiFile <file>`  | `Copy-PAFile <file>` or<br> `cpaf <file>` | will upload it, returns the file item

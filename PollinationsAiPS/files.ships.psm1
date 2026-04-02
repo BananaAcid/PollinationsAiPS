@@ -3,7 +3,7 @@
 using namespace Microsoft.PowerShell.SHiPS
 using namespace System.IO
 
-using namespace System.Windows.Media.Imaging
+#*IMG  using namespace System.Windows.Media.Imaging
 
 
 <#
@@ -38,6 +38,9 @@ class PollinationsState {
         $hashStr = [BitConverter]::ToString($hashBytes).Replace("-", "").ToLower()
         $dir = [PollinationsState]::StorageDir
         if ([string]::IsNullOrEmpty($dir)) { $dir = $env:TEMP }
+
+        Write-Debug ("[DEBUG] Loading PollinationsAI state from " + [Path]::Combine($dir, "files.$hashStr.json"))
+
         return [Path]::Combine($dir, "files.$hashStr.json")
     }
 
@@ -45,6 +48,7 @@ class PollinationsState {
     static [void] Load() {
         if ([PollinationsState]::Loaded) { return }
         $path = [PollinationsState]::GetStateFilePath()
+
         if (Test-Path $path) {
             try {
                 $json = Get-Content $path -Raw | ConvertFrom-Json
@@ -93,23 +97,29 @@ class PollinationsState {
 }
 
 class PollinationsRoot : SHiPSDirectory {
-    PollinationsRoot([string]$name) : base($name) { }
+    PollinationsRoot([string]$name) : base($name) {
+        [PollinationsState]::Load()
+    }
 
     [object[]] GetChildItem() {
         [PollinationsState]::Load()
         $results = [PollinationsState]::Files.ToArray()
         # Force the type name so Update-TypeData works on the SHiPS wrapped objects
-        foreach ($r in $results) {
-            if ($r.psobject.TypeNames[0] -ne "PollinationsFile") {
-                $r.psobject.TypeNames.Insert(0, "PollinationsFile")
-            }
-        }
+        # foreach ($r in $results) {
+        #     if ($r.psobject.TypeNames[0] -ne "PollinationsFile") {
+        #         $r.psobject.TypeNames.Insert(0, "PollinationsFile")
+        #     }
+        # }
+
         return $results
     }
 
     [object] NewItem([string]$name, [string]$itemType, [object]$value) {
-        if (-not $value) {
-            throw "Please provide a value. For file upload, provide the local file path via -Value."
+        if (-not $value) { throw "Please provide a value. For file upload, provide the local file path via -Value." }
+
+        # disallow subfolders in drive itself
+        if ($name -match '[\\/]' -or $name -match '[:]' ) {
+            throw "Subfolders are not supported in PollinationsAI drive. Specify a filename only."
         }
 
         $apiKey = $env:POLLINATIONSAI_API_KEY
