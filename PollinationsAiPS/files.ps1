@@ -1,284 +1,243 @@
-<#
+# Nabil Redmann - 2026-04-02
+# License: MIT
 
-TODO:
-
-
-
-BUG: downloading / GC
-
-
-
-Update-TypeData DOES not reformat the output of "ls" 
--- see? https://github.com/rchaganti/PSConfDrive/blob/master/PSConfDrive.Format.ps1xml
-
-
-renaming a file in the PSDrive ?  -> like downloading-renaming-online_Delete-uploading  (for Content-Deposition to work)
-
-
-
-Uploaded Name is the same as destination name in copy?
-
-
-copy to subfolder:
-    error on copy
-        copy ..\examples\wallpapers\wp_black-white.jpg PollinationsAi:\test\black-white.jpg
-        Copy-Item: D:\GitHub\PollinationsAiPS\PollinationsAiPS\files.ps1:199:24
-        Line |
-        199 |  …            else { Microsoft.PowerShell.Management\Copy-Item @params }
-            |                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            | Source and destination path did not resolve to the same provider.
-
-
-    only this works in upload - but nothing shows up in the directory (does nothing):
-        Add-PollinationsAiFile ..\examples\wallpapers\wp_black-white.jpg PollinationsAi:\test\black-white.jpg
-        Uploading wp_black-white.jpg to PollinationsAi:\test as black-white.jpg...
-        Done!
-
-    ... Copy-Item should use get-item for downloading
-
-
-
-
-get item by hash, even if it is not in $Files (just get it) -Check if media exists -> https://enter.pollinations.ai/api/docs#tag/-media-storage/HEAD/{hash}
-    curl 'https://media.pollinations.ai/{hash}' \
-    --request HEAD \
-    --header 'Authorization: Bearer YOUR_SECRET_TOKEN'
-
-    ... and add to $files, because the filename is in the header as part of the content-disposition
-
-    ... copy (from pollinationsai: with -Hash instead of -Path) and get-content (from pollinationsai: -Path instead of -Hash) should work as well  (and also update $files)
-
-    ... remove-item should work with -Hash as well /first getting the metadata from endpoint, then removing it
-
-
-
-
-Fork with missing fnctions
-    https://github.com/Scal-Human/SHiPS
-
-
-#>
-
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingCmdletAliases', '', Justification="For me there is no readability issue", Scope = 'Function', Target = '*')]
-param()
-
-
-#*IMG  Add-Type -AssemblyName PresentationCore
-#*IMG  Add-Type -AssemblyName WindowsBase
-
-
-# Import the SHiPS module
-Import-Module SHiPS -ErrorAction SilentlyContinue
-
-If (-not (Get-Module -Name SHiPS -ListAvailable)) {
-    Install-Module SHiPS -Force
-    Import-Module SHiPS
-}
-
-# Import the drive specs
-Import-Module $PSScriptRoot\files.ships.psm1
-
-
-$script:lastDriveName = $null
-
-Function Enable-PollinationsAiDrive {
-    param(
-        $Name = "PollinationsAI",
-        [switch]$Silent = $false
-    )
-    if (-not $env:POLLINATIONSAI_API_KEY) {
-        if (-not $Silent) {
-            throw "Please set the `$env:POLLINATIONSAI_API_KEY environment variable to use the PollinationsAI Drive. You can use 'Get-PollinationsAiByok -Add'. See the Readme for more information. Then restart the session or retry with 'Enable-PollinationsAiDrive'"
-        }
-        return
-    }
-
-    $pollinationsDrive = Get-PSDrive |? Root -eq "files.ships#PollinationsRoot"
-    if ($pollinationsDrive) {
-        $pollinationsDrive | Remove-PSDrive -ErrorAction Stop  # might be in use, e.g. is current path
-    }
-
-    $script:lastDriveName = $Name
-    
-    New-PSDrive -Name $Name -PSProvider SHiPS -Root "files.ships#PollinationsRoot" -Description "PollinationsAI Cloud Storage" -Scope Global
-}
-
-Function Get-PollinationsAiDrive {
-    if ($script:lastDriveName) {
-        return Get-PSDrive |? Root -eq "files.ships#PollinationsRoot"
-    }
-    else {
-        return $null
-    }
-}
-
-# Create the drive, but only if there is an api key
-Enable-PollinationsAiDrive -Silent | Out-Null
-
-
-
-<#
-.SYNOPSIS
-    Helper function to mimic Copy-Item behavior for PollinationsAI drive.
-#>
-function Add-PollinationsAiFileOld {
+Function Add-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, Position=0)][string]$Path,
-        [Parameter(Mandatory=$false, Position=1)][string]$Destination = "$($script:lastDriveName):\\"
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)] [string]$Path,
+        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        [switch]$Details
     )
-
-    if (-not (Test-Path $Path)) { throw "Cannot find path '$Path' because it does not exist."}
-    
-    $fullPath = Convert-Path $Path -ErrorAction Stop
-    $name = Split-Path $fullPath -Leaf
-    $targetPath = $Destination
-
-    # If Destination ends with a filename, split it
-    if ($Destination -match "\.[a-zA-Z0-9]+$") {
-        $name = Split-Path $Destination -Leaf
-        $targetPath = Split-Path $Destination -Parent
-        if ([string]::IsNullOrWhiteSpace($targetPath)) { $targetPath = "$($script:lastDriveName):\" }
-    }
-
-    if ($Destination -match "^$($script:lastDriveName):[\\/]") {
-        # remove drive root, see if there is subfolder
-        $relative = $Destination.Substring($script:lastDriveName.Length + 1).TrimStart('\','/')
-        if ($relative -match "[\\/]" -and $relative -ne "") {
-            throw "Subfolders are not supported in PollinationsAI drive. Specify a filename only."
+    process {
+        if (-not $POLLINATIONSAI_API_KEY) { 
+            throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" 
         }
-    }
 
-    Write-Host "Uploading $(Split-Path $fullPath -Leaf) to $targetPath as $name..." -ForegroundColor Cyan
-    
-    $newItem = $null
-    try {
-        $newItem = New-Item -Path $targetPath -Name $name -ItemType "File" -Value $fullPath -ErrorAction Stop  # one of the the few suppoored ShiPS methods
-    }
-    catch [System.Management.Automation.MethodInvocationException] {
-        throw $_
-    }
-    catch {
-        $targetDir = Get-Item $targetPath -ErrorAction SilentlyContinue
-        if ($targetDir -and $targetDir.psobject.Methods.Match('NewItem').Count -gt 0) {
-            $newItem = $targetDir.NewItem($name, "File", $fullPath)
-        } else {
+        if (-not (Test-Path $Path -PathType Leaf)) {
+            throw "Cannot find file path '$Path'. Only local file paths are supported for raw binary upload."
+        }
+        $localPath = Resolve-Path $Path
+
+        $uri = "https://media.pollinations.ai/upload"
+        $headers = @{ Authorization = "Bearer $POLLINATIONSAI_API_KEY" }
+
+        try {
+            $response = Invoke-WebRequest `
+                -Uri $uri `
+                -Method Post `
+                -Headers $headers `
+                -InFile $localPath `
+                -ErrorAction Stop
+
+            $contentJson = $response.Content | ConvertFrom-Json
+            $url = if ($contentJson.url) { $contentJson.url.ToString().Trim() } else { $response.Content.Trim() }
+
+            if ($Details) { 
+                return @{
+                    id = $contentJson.id
+                    hash = $contentJson.id
+                    url = $contentJson.url
+                    contentType = $contentJson.contentType
+                    size = $contentJson.size
+                    duplicate = $contentJson.duplicate
+                    Headers = $response.Headers
+                    Content = $response.Content
+                } 
+            } else { return $url }
+        } catch {
             throw $_
         }
     }
-    
-    if ($newItem) {
-        Write-Host "Done! Hash: $($newItem.Hash) | Url: $($newItem.Url)" -ForegroundColor Green
-    } else {
-        Write-Host "Done!" -ForegroundColor Green
-    }
-
-    return $newItem
 }
 
-function Get-PollinationsAiFileOld {
+Function Get-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, Position=0)][string]$Source,
-        [Parameter(Mandatory=$false)][string]$Destination
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Hash,
+        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        [switch]$Details
     )
-
-    # Accept either name or full drive path
-    if ($Source -like "$($script:lastDriveName):*") {
-        $Source = $Source.Substring($($script:lastDriveName).Length + 1).TrimStart('\','/')
-    }
-
-    # Use Get-Item to resolve the file object from the drive
-    $fileObj = Get-Item "$($script:lastDriveName):\$Source" -ErrorAction Stop
-
-    if (-not $fileObj) {
-        throw "File '$Source' not found in PollinationsAI drive."
-    }
-
-    if (-not $Destination) {
-        $Destination = Join-Path (Get-Location).Path $fileObj.Name
-    } elseif (Test-Path $Destination -PathType Container) {
-        $Destination = Join-Path $Destination $fileObj.Name
-    }
-
-    Write-Host "Downloading $($fileObj.Name) to $Destination..." -ForegroundColor Cyan
-
-    # Use Get-Content to retrieve the content via SHiPS provider
-    $content = Get-Content $fileObj -ErrorAction Stop
-
-    # Save the byte array to file
-    [IO.File]::WriteAllBytes($Destination, $content)
-
-    Write-Host "Download Complete!" -ForegroundColor Green
-
-    return (Resolve-Path $Destination)
-}
-
-
-function global:Copy-Item {
-    [CmdletBinding(DefaultParameterSetName='Path', SupportsShouldProcess=$true)]
-    param(
-        [Parameter(ParameterSetName='Path', Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)][string[]]$Path,
-        [Parameter(Position=1)][string]$Destination,
-        [Parameter(ValueFromRemainingArguments=$true)][Object[]]$RemainingArgs
-    )
-    
     process {
-        $currentDrive = (Get-Location).Drive.Name
-        foreach ($p in $Path) {
+        $headers = @{ "Content-Type" = "application/json" }
+        if ($POLLINATIONSAI_API_KEY) { $headers += @{Authorization = "Bearer $POLLINATIONSAI_API_KEY"} }
 
-            $sourceInDrive = $p -like "$($script:lastDriveName):*" -or ($currentDrive -eq $script:lastDriveName -and $p -notmatch '^[A-Za-z]:\\')
-            $destInDrive   = $Destination -like "$($script:lastDriveName):*"
-
-            if ($sourceInDrive -and -not $destInDrive) {
-                # internal drive -> local path (download)
-                try { Get-PollinationsAiFile -Source $p -Destination $Destination } catch { Write-Error $_ }
-            } elseif (-not $sourceInDrive -and $destInDrive) {
-                # local -> internal drive (upload)
-                try { Add-PollinationsAiFile -Path $p -Destination $Destination } catch { Write-Error $_ }
-            } elseif ($sourceInDrive -and $destInDrive) {
-                Write-Error "PollinationsAI -> PollinationsAI copy is not supported."
-            } else {
-                # Fix for positional parameter error: Use splatting to avoid passing nulls or empty arrays
-                $params = @{ Path = $p }
-                if ($Destination) { $params["Destination"] = $Destination }
-                
-                # Use & to call native Copy-Item and avoid recursion if this function is named Copy-Item
-                if ($RemainingArgs) { Microsoft.PowerShell.Management\Copy-Item @params @RemainingArgs }
-                else { Microsoft.PowerShell.Management\Copy-Item @params }
-            }
-        }
-    }
-}
-
-function global:Remove-Item {
-    [CmdletBinding(SupportsShouldProcess=$true)]
-    param(
-        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)][string[]]$Path,
-        [Parameter(ValueFromRemainingArguments=$true)][Object[]]$RemainingArgs
-    )
-    
-    process {
-        foreach ($p in $Path) {
-            $resolvedPath = try { (Resolve-Path $p -ErrorAction SilentlyContinue).Path } catch { $p }
-            if ($resolvedPath -match ("^" + $script:lastDriveName + ":")) {
-                # Force SHiPS to call the class's RemoveItem() method
-                $item = Get-Item $resolvedPath -ErrorAction SilentlyContinue
-                if ($item -and $item.psobject.Methods.Match('RemoveItem').Count -gt 0) {
-                    if ($PSCmdlet.ShouldProcess($resolvedPath, "Delete from Pollinations API")) {
-                        $item.RemoveItem()
-                    }
-                } else {
-                    $params = @{ Path = $p }
-                    if ($RemainingArgs) { Microsoft.PowerShell.Management\Remove-Item @params @RemainingArgs }
-                    else { Microsoft.PowerShell.Management\Remove-Item @params }
+        $uri = "https://media.pollinations.ai/$Hash"
+        try {
+            $response = Invoke-WebRequest -Uri $uri -Method Get -Headers $headers -UseBasicParsing -ErrorAction Stop
+            if ($Details) {
+                return @{ 
+                    Headers = $response.Headers;
+                    Content = $response.Content;
+                    "Content-Type" = $response.Headers.'Content-Type';
+                    "Content-Length" = $response.Headers.'Content-Length';
                 }
             } else {
-                $params = @{ Path = $p }
-                if ($RemainingArgs) { Microsoft.PowerShell.Management\Remove-Item @params @RemainingArgs }
-                else { Microsoft.PowerShell.Management\Remove-Item @params }
+                return $response.Content
             }
+        } catch {
+            throw $_
         }
     }
 }
 
+Function Remove-PollinationsAiFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Hash,
+        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        [switch]$Details
+    )
+    process {
+        if (-not $POLLINATIONSAI_API_KEY) { 
+            throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" 
+        }
+        $headers = @{ "Content-Type" = "application/json"; Authorization = "Bearer $POLLINATIONSAI_API_KEY" }
+
+        $uri = "https://media.pollinations.ai/$Hash"
+        try {
+            $response = Invoke-WebRequest -Uri $uri -Method Delete -Headers $headers -ErrorAction Stop
+            if ($Details) { 
+                $contentJson = $response.Content | ConvertFrom-Json
+                return @{
+                    deleted = $contentJson.deleted
+                    id = $contentJson.id
+                    Headers = $response.Headers
+                    Content = $response.Content
+                } 
+            } else { return $true }
+        } catch {
+            if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
+                if ($Details) { 
+                    $contentJson = $_.Exception.Response.Content | ConvertFrom-Json
+                    return @{
+                        deleted = $contentJson.deleted
+                        id = $contentJson.id
+                        Headers = $_.Exception.Response.Headers
+                        Content = $_.Exception.Response.Content
+                    } 
+                } else { return $false }
+            } else { throw $_ }
+        }
+    }
+}
+
+Function Export-PollinationsAiFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Hash,
+        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        [switch]$Details
+    )
+    process {
+        $headers = @{ "Content-Type" = "application/json" }
+        if ($POLLINATIONSAI_API_KEY) { $headers += @{Authorization = "Bearer $POLLINATIONSAI_API_KEY"} }
+
+        $uri = "https://media.pollinations.ai/$Hash/metadata"
+        try {
+            $response = Invoke-WebRequest -Uri $uri -Method Get -Headers $headers -ErrorAction Stop
+            if ($Details) { return @{ Headers = $response.Headers; Content = $response.Content } } else { return ($response.Content | ConvertFrom-Json) }
+        } catch {
+            throw $_
+        }
+    }
+}
+
+Function Test-PollinationsAiFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Hash,
+        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        [switch]$Details
+    )
+    process {
+        if (-not $POLLINATIONSAI_API_KEY) { 
+            throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" 
+        }
+
+        $uri = "https://media.pollinations.ai/$Hash"
+        try {
+            $response = Invoke-WebRequest -Uri $uri -Method Head -UseBasicParsing -ErrorAction Stop
+            if ($Details) { 
+                return @{
+                    ContentType = $response.Headers.'Content-Type'
+                    ContentLength = $response.Headers.'Content-Length'
+                    Headers = $response.Headers
+                } 
+            } else { return $true }
+        } catch {
+            if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
+                if ($Details) { 
+                    return @{
+                        ContentType = $_.Exception.Response.Headers.'Content-Type'
+                        ContentLength = $_.Exception.Response.Headers.'Content-Length'
+                        Headers = $_.Exception.Response.Headers
+                    } 
+                } else { return $false }
+            } else { throw $_ }
+        }
+    }
+}
+
+Function Measure-PollinationsAiFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$false)][string]$Path,
+        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        [switch]$KeepLocal,
+        [switch]$Details
+    )
+
+    process {
+        if (-not $POLLINATIONSAI_API_KEY) { 
+            throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" 
+        }
+
+        $createdTemp = $false
+        try {
+            if ([string]::IsNullOrWhiteSpace($Path)) {
+                # use stable online test image instead of an ad hoc text file
+                $Path = Join-Path ([IO.Path]::GetTempPath()) ("pollinationsaitest_{0}.png" -f [guid]::NewGuid())
+                $sourceUrl = "https://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/960px-Wikipedia-logo-v2.svg.png"
+                Invoke-WebRequest -Uri $sourceUrl -OutFile $Path -UseBasicParsing -ErrorAction Stop
+                $createdTemp = $true
+            } else {
+                if (-not (Test-Path $Path -PathType Leaf)) {
+                    throw "Path not found: $Path"
+                }
+            }
+
+            $upload = Add-PollinationsAiFile -Path $Path -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+            if ($null -eq $upload -and -not $Details) {
+                # fallback in case Function returns URL only
+                $url = Add-PollinationsAiFile -Path $Path -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY
+                $hash = $url -replace '^.*/',''
+            } elseif ($Details) {
+                $hash = ($upload.Content | ConvertFrom-Json).url -replace '^.*/',''
+            }
+
+            $check1 = Test-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+            $get1   = Get-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+            $meta1  = Export-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+            $rm1    = Remove-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+            $check2 = Test-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+
+            $result = [pscustomobject]@{
+                InputPath      = $Path
+                Uploaded       = $true
+                Hash           = $hash
+                UploadResult   = $upload
+                TestBefore     = $check1
+                GetResult      = if ($Details) { $get1 } else { $null }
+                Metadata       = if ($Details) { $meta1 } else { $null }
+                RemoveResult   = $rm1
+                TestAfter      = $check2
+                Success        = ($check1.Headers.'X-Status' -eq '200' -and $check2.Headers.'X-Status' -ne '200')
+            }
+            if ($Details) { return $result } else { return $result.Success }
+        } finally {
+            if ($createdTemp -and -not $KeepLocal -and (Test-Path $Path)) {
+                Remove-Item $Path -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
