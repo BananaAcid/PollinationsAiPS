@@ -4,6 +4,8 @@ Change the windows wallpaper with AI generated images, based on an existing imag
 
 Works best with logos. Since most AI models have different output sizes. Set your Desktop background color to the same as in -BackgroundColor.
 
+The commands below, are all run in powershell. <kbd>Win+R</kbd> -> `pwsh` or on older windows systems: <kbd>Win+R</kbd> -> `powershell`.
+
 ## Usage
 
 ```ps1
@@ -19,6 +21,7 @@ Works best with logos. Since most AI models have different output sizes. Set you
 Add-PollinationsAiFile .\myImage.jpg  # shows: https://media.pollinations.ai/dc4e764fed4d7a96
 .\Update-Wallpaper -Image "https://media.pollinations.ai/dc4e764fed4d7a96"
 ```
+
 ### If you are ready to set automate it
 
 1. edit `.\wallpaper_config.ps1` and add all your tested `-Param Value` as `$Param = "Value"` to it
@@ -30,7 +33,18 @@ Add-PollinationsAiFile .\myImage.jpg  # shows: https://media.pollinations.ai/dc4
 
 To remove the task later on `.\Update-Wallpaper -Task Remove`
 
-### Advanced usage
+## Installation
+
+1. Save the `Update-Wallpaper.ps1` to a folder (where it can stay: like  Documents)
+2. To the same folder, you need to download the Set-Wallpaper script (Update 08/10/2020) from https://www.joseespitia.com/2017/09/15/set-wallpaper-powershell-function/  and save it as **`.\set-wallpaper.ps1`**
+    - ⚠️ But DO NOT include the last line that says `Set-WallPaper -Image "C:\Wallpaper\Background.jpg" -Style Fit`
+3. open powershell
+4. `cd ~\Documents` or where you saved your scripts
+5. Install dependency the very first time: `Install-Module PollinationsAiPS -Force ; Import-Module PollinationsAiPS`
+
+5. Use `.\Update-Wallpaper`
+
+## Advanced usage
 ```ps1
 # test it with a custom prompt
 $Content = "Make it glow in {Color} and fill background with {BackgroundColor} and show some outerspace but less to the image edges"    # we want to center it on the screen and fill the background with black
