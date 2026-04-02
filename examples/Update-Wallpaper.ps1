@@ -105,11 +105,6 @@ Function Invoke-UpdateWallpaper {
 
     Write-Output "⭐ Wallpaper in color $Color"
 
-    Write-Debug "Path:     $Path\wp_$BackgroundColor-$Color.jpg"
-    Write-Debug "ImageUri: $ImageUri"
-    Write-Debug "Color:    $Color"
-    Write-Debug "Model:    $Model"
-
     # create wallpaper folder, if missing
     mkdir $Path -ErrorAction SilentlyContinue | Out-Null
 
@@ -120,6 +115,18 @@ Function Invoke-UpdateWallpaper {
         "seedream" { @{ width = "3440"; height = "1440" } }
         default { @{} } # PollinationsAI seems to be @{"width" = 1021,"height" = 1021}
     }
+
+
+    Write-Debug "_File:           $Path\wp_$BackgroundColor-$Color.jpg"
+    Write-Debug "Path:            $Path"
+    Write-Debug "ImageUri:        $ImageUri"
+    Write-Debug "Model:           $Model"
+    Write-Debug "Color:           $Color"
+    Write-Debug "Colors:          $Colors"
+    Write-Debug "BackgroundColor: $BackgroundColor"
+    Write-Debug "_Sizes:          $($sizes | ConvertTo-JSON -Compress)"
+    Write-Debug "Settings:        $($Settings | ConvertTo-JSON -Compress)"
+    Write-Debug "Content:`n$Content"
 
 
     # Only generate if it does not exist, for speed (reduces unnecessary calls and the model takes its time)
