@@ -83,6 +83,11 @@ Get-PollinationsAiByok -Init
 > - `ConvertFrom-AnsiEscapedString`
 > - `Get-PollinationsAiByok`, **Alias**: `Get-PAByok`, `Get-PollinationsAiDeviceToken`
 > - `Get-PollinationsAiByokWeb` (Old method, but can be used to redirect to a website that receives the confirmation/apikey)
+> ---
+> ### Update-Wallpaper - Periodically recolor your background with AI
+> - Is a fully working example project
+> - Change the windows wallpaper with AI generated images, based on an existing image, colored and tinted to a specific color
+> - [/examples/Update-Wallpaper.ps1](https://github.com/BananaAcid/PollinationsAiPS/blob/main/examples/Update-Wallpaper.README.md)
 
 ## Example Usage
 
