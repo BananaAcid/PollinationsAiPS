@@ -9,6 +9,7 @@
 * **Pipeline Friendly:** Designed to work with PowerShell objects and pipes.
 * **Easy Integration:** Simple to use in your powershell workflows (.NET Framework and .NET Core) and Azure.
 * **Cross Platform:** Just runs on Windows, macOS, and Linux. And Docker / Podman. And more.
+* **Media Storage:** Supports Pollinations native media storage for image-to-image or image-to-text.
 
 ... in pure Powershell 5+ / 7+ (Win, Linux, OSX, Docker, ...) -- PollinationsAI can be used for free (only needs registration, but no moneys)
 
@@ -142,4 +143,14 @@ All types support `-List`
 #### Filter for free and with image-url as input
 ```powershell
 Get-PollinationsAiImage -List -Details |? paid_only -eq $false |? input_modalities -contains image | Format-Table 
+```
+
+#### Do some image-to-text with a local image
+
+```powershell
+# upload local image to PollinationsAI media storage
+$image = Add-PollinationsAiFile .\image.jpg
+
+# use a model that allows image input, and add the image or images
+Get-PollinationsAiText "What is on this image?" -Model "gemini-fast" -Settings @{image = $image}
 ```

@@ -41,9 +41,15 @@ Save-Module -Name PollinationsAiPS -Path .\   # this creates a subfolder .\Polli
 ### You might want to add your key as environment variable to your profile
 
 ```powershell
+Get-PollinationsAiByok -Add
+
+# or manually:
+
 "`n`n`$env:POLLINATIONSAI_API_KEY = `"sk_..............`"" >> $PROFILE.CurrentUserAllHosts
 ```
 ... after restarting your powershell console, the key will be available.
+
+**For different options see [Readme > Bring-Your-Own-Key](https://github.com/BananaAcid/PollinationsAiPS?tab=readme-ov-file#you-might-want-to-add-your-key-as-environment-variable-to-your-profile)**
 
 ## Params
 
@@ -52,7 +58,7 @@ Save-Module -Name PollinationsAiPS -Path .\   # this creates a subfolder .\Polli
 | `<string>` <br>or `-content <string>` <br>or `-prompt <string>` | (required) | `"Some Text-Prompt"` | The content to be created. |
 | `-model <string>` | `"zimage"` | `"flux"` | The model to use. |
 | `-POLLINATIONSAI_API_KEY <string>` <br>or `-key <string>` | `$env:POLLINATIONSAI_API_KEY` | `sk_12345678901234567890` | Use a PollonationsAI API Key - if left set to "", `$env:POLLINATIONSAI_API_KEY` is being checked. **Note: Add the API key to your environment variables.** |
-| `-settings <hashtable>` <br>or `-set <hashtable>` | [see below](#file-ask-pollinations_image-ps1-L170-L183) | `@{seed = 2147483647}` | A hashtable of settings passed to the Pollinations AI API. |
+| `-settings <hashtable>` <br>or `-set <hashtable>` | [see below](#file-ask-pollinations_image-ps1-L170-L183) | `@{seed = 2147483647}` <br> `@{image = "url"}` | A hashtable of settings passed to the Pollinations AI API. Use a local image, you can use the PollinationsAI Storage, see: [/docs/files.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/files.md) |
 | `-bypassCache` <br>or `-nocache` | | | Only bypasses the cloudflare cache, and sets the seed to random, resulting in a newly generated response. Without, the first request will generate the result, each subsequent request will result in the cached response. |
 | `-assignedModelList` | | `text` | The endpoint the model is from to use for audio generation (text or audio model list). Set to either `text` or `audio` to prevent 2 extra API calls for checking model lists|
 | `-out <string>` | | `acat.jpg` | The local path to save the generated image and returns the path. |
@@ -151,6 +157,16 @@ PS> Get-PollinationsAiImage -content "a cat" -settings $s -out acat.jpg
 3. then output the settings (just by typing $s), 
 4. then modify them, 
 5. then generate an image based on the prompt "a cat" using the modified settings.
+
+### Do some image-to-text with a local image
+
+```powershell
+# upload local image to PollinationsAI media storage
+$image = Add-PollinationsAiFile .\image.jpg
+
+# use a model that allows image input, and add the image or images
+Get-PollinationsAiText "What is on this image?" -Model "gemini-fast" -Settings @{image = $image}
+```
 
 ### Generate an image and save it inline in an html file
 

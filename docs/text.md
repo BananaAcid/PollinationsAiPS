@@ -39,10 +39,17 @@ Save-Module -Name PollinationsAiPS -Path .\   # this creates a subfolder .\Polli
 </details>
 
 ### You might want to add your key as environment variable to your profile
+
 ```powershell
+Get-PollinationsAiByok -Add
+
+# or manually:
+
 "`n`n`$env:POLLINATIONSAI_API_KEY = `"sk_..............`"" >> $PROFILE.CurrentUserAllHosts
 ```
 ... after restarting your powershell console, the key will be available.
+
+**For different options see [Readme > Bring-Your-Own-Key](https://github.com/BananaAcid/PollinationsAiPS?tab=readme-ov-file#you-might-want-to-add-your-key-as-environment-variable-to-your-profile)**
 
 ## Params
 

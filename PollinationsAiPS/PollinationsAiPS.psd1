@@ -12,7 +12,7 @@
     RootModule = 'PollinationsAiPS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.5'
+    ModuleVersion = '1.1.0'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Desk', 'Core')
@@ -51,7 +51,7 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules = @('SHiPS')
+    RequiredModules = @()
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
@@ -69,7 +69,11 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiImage', 'Get-PollinationsAiAudio', 'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb', 'Enable-PollinationsAiDrive', 'Get-PollinationsAiDrive', 'Add-PollinationsAiFile')
+    FunctionsToExport = @(
+        'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiImage', 'Get-PollinationsAiAudio',
+        'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb',
+        'Add-PollinationsAiFile', 'Get-PollinationsAiFile', 'Test-PollinationsAiFile', 'Remove-PollinationsAiFile', 'Export-PollinationsAiFile', 'Measure-PollinationsAiFile'
+    )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()
@@ -78,7 +82,10 @@
     # VariablesToExport = @()
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport = @('Get-PAImg', 'Get-PATxt', 'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'gpai', 'gpat', 'gpatx', 'gpaa', 'Get-PollinationsAiDeviceToken', 'Set-PADrive', 'Get-PADrive', 'Copy-PAFile', 'cpaf')
+    AliasesToExport = @(
+        'Get-PAImg', 'Get-PATxt', 'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'gpai', 'gpat', 'gpatx', 'gpaa', 'Get-PollinationsAiDeviceToken',
+        'Add-PAFile', 'Get-PAFile', 'Test-PAFile', 'Remove-PAFile', 'Export-PAFile', 'Measure-PAFile', 'apaf', 'gpaf', 'tpaf', 'rpaf', 'epaf'
+    )
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()

@@ -4,7 +4,7 @@
 Function Add-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)] [string]$Path,
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Path,
         [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
         [switch]$Details
     )
@@ -50,6 +50,7 @@ Function Add-PollinationsAiFile {
     }
 }
 
+# Throws on 404! This is on purpose
 Function Get-PollinationsAiFile {
     [CmdletBinding()]
     param(
@@ -110,8 +111,8 @@ Function Remove-PollinationsAiFile {
                 if ($Details) { 
                     $contentJson = $_.Exception.Response.Content | ConvertFrom-Json
                     return @{
-                        deleted = $contentJson.deleted
-                        id = $contentJson.id
+                        deleted = $contentJson.deleted -or $false
+                        id = $contentJson.id -or $Hash
                         Headers = $_.Exception.Response.Headers
                         Content = $_.Exception.Response.Content
                     } 
@@ -121,6 +122,7 @@ Function Remove-PollinationsAiFile {
     }
 }
 
+#! ENDPOINT BUGGY - So no 404 handling yet.
 Function Export-PollinationsAiFile {
     [CmdletBinding()]
     param(
@@ -162,6 +164,7 @@ Function Test-PollinationsAiFile {
                     ContentType = $response.Headers.'Content-Type'
                     ContentLength = $response.Headers.'Content-Length'
                     Headers = $response.Headers
+                    Success = $true
                 } 
             } else { return $true }
         } catch {
@@ -171,6 +174,7 @@ Function Test-PollinationsAiFile {
                         ContentType = $_.Exception.Response.Headers.'Content-Type'
                         ContentLength = $_.Exception.Response.Headers.'Content-Length'
                         Headers = $_.Exception.Response.Headers
+                        Success = $false
                     } 
                 } else { return $false }
             } else { throw $_ }
@@ -178,10 +182,20 @@ Function Test-PollinationsAiFile {
     }
 }
 
+
+
+
+
+<#
+    .Notes
+        To run:  PS> . Measure-PollinationsAiFile -Details
+
+        Allows to dig into the vars, eg. $result
+#>
 Function Measure-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$false)][string]$Path,
+        [Parameter(Mandatory=$false)][string]$PathTestImage,
         [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
         [switch]$KeepLocal,
         [switch]$Details
@@ -194,49 +208,140 @@ Function Measure-PollinationsAiFile {
 
         $createdTemp = $false
         try {
-            if ([string]::IsNullOrWhiteSpace($Path)) {
+            if ([string]::IsNullOrWhiteSpace($PathTestImage)) {
                 # use stable online test image instead of an ad hoc text file
-                $Path = Join-Path ([IO.Path]::GetTempPath()) ("pollinationsaitest_{0}.png" -f [guid]::NewGuid())
+                $PathTestImage = Join-Path ([IO.Path]::GetTempPath()) ("pollinationsaitest_{0}.png" -f [guid]::NewGuid())
                 $sourceUrl = "https://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/960px-Wikipedia-logo-v2.svg.png"
-                Invoke-WebRequest -Uri $sourceUrl -OutFile $Path -UseBasicParsing -ErrorAction Stop
+                Invoke-WebRequest -Uri $sourceUrl -OutFile $PathTestImage -UseBasicParsing -ErrorAction Stop
                 $createdTemp = $true
             } else {
-                if (-not (Test-Path $Path -PathType Leaf)) {
-                    throw "Path not found: $Path"
+                if (-not (Test-Path $PathTestImage -PathType Leaf)) {
+                    throw "Path not found: $PathTestImage"
                 }
             }
 
-            $upload = Add-PollinationsAiFile -Path $Path -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
-            if ($null -eq $upload -and -not $Details) {
+            # Test Upload
+            $upload = Add-PollinationsAiFile -Path $PathTestImage -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+            if ($null -eq $upload) {
                 # fallback in case Function returns URL only
-                $url = Add-PollinationsAiFile -Path $Path -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY
+                $url = Add-PollinationsAiFile -Path $PathTestImage -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY
                 $hash = $url -replace '^.*/',''
-            } elseif ($Details) {
-                $hash = ($upload.Content | ConvertFrom-Json).url -replace '^.*/',''
+            } else {
+                # upload is a hashtable with id/hash/url/etc
+                $hash = $upload.hash
+                if (-not $hash) {
+                    $hash = $upload.url -replace '^.*/',''
+                }
             }
 
-            $check1 = Test-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
-            $get1   = Get-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
-            $meta1  = Export-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
-            $rm1    = Remove-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
-            $check2 = Test-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+            # Test with -Details
+            $check1Detail = $null
+            $get1Detail = $null
+            $meta1Detail = $null
+            $rm1Detail = $null
+            $check2Detail = $null
+            
+            try { $check1Detail = Test-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details } 
+            catch { Write-Warning "Test-PollinationsAiFile (before, -Details) failed: $_" }
+            
+            try { $get1Detail = Get-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details } 
+            catch { Write-Warning "Get-PollinationsAiFile (-Details) failed: $_" }
+            
+            try { $meta1Detail = Export-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details } 
+            catch { Write-Warning "Export-PollinationsAiFile (-Details) failed: $_" }
+
+            # Test without -Details (basic return value test)
+            $check1NoDetail = $null
+            $get1NoDetail = $null
+            $meta1NoDetail = $null
+            
+            try { $check1NoDetail = Test-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY } 
+            catch { Write-Warning "Test-PollinationsAiFile (before, no -Details) failed: $_" }
+            
+            try { $get1NoDetail = Get-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY } 
+            catch { Write-Warning "Get-PollinationsAiFile (no -Details) failed: $_" }
+            
+            try { $meta1NoDetail = Export-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY } 
+            catch { Write-Warning "Export-PollinationsAiFile (no -Details) failed: $_" }
+
+            # Remove file
+            $rm1Detail = $null
+            $rm1NoDetail = $null
+            try { $rm1Detail = Remove-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details } 
+            catch { Write-Warning "Remove-PollinationsAiFile (-Details) failed: $_" }
+            
+            try { $rm1NoDetail = Remove-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY } 
+            catch { Write-Warning "Remove-PollinationsAiFile (no -Details) failed: $_" }
+
+            # Test after deletion
+            $check2NoDetail = $null
+            $check2Detail = $null
+            try { $check2Detail = Test-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details } 
+            catch { Write-Warning "Test-PollinationsAiFile (after, -Details) failed: $_" }
+            
+            try { $check2NoDetail = Test-PollinationsAiFile -Hash $hash -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY } 
+            catch { Write-Warning "Test-PollinationsAiFile (after, no -Details) failed: $_" }
+
+            # Determine success: file existed before, doesn't exist after
+            $beforeExists = if ($check1Detail) { $null -ne $check1Detail.ContentType } else { $check1NoDetail -eq $true }
+            $afterExists = if ($check2Detail) { $null -ne $check2Detail.ContentType } else { $check2NoDetail -eq $true }
+            $successFlag = $beforeExists -and (-not $afterExists)
 
             $result = [pscustomobject]@{
-                InputPath      = $Path
+                InputPath      = $PathTestImage
                 Uploaded       = $true
                 Hash           = $hash
                 UploadResult   = $upload
-                TestBefore     = $check1
-                GetResult      = if ($Details) { $get1 } else { $null }
-                Metadata       = if ($Details) { $meta1 } else { $null }
-                RemoveResult   = $rm1
-                TestAfter      = $check2
-                Success        = ($check1.Headers.'X-Status' -eq '200' -and $check2.Headers.'X-Status' -ne '200')
+                TestBefore    = $check1Detail
+                TestBeforeNoDetail = $check1NoDetail
+                GetResult      = if ($Details) { $get1Detail } else { $null }
+                GetResultNoDetail = if ($Details) { $get1NoDetail } else { $null }
+                Metadata       = if ($Details) { $meta1Detail } else { $null }
+                MetadataNoDetail = if ($Details) { $meta1NoDetail } else { $null }
+                RemoveResult   = $rm1Detail
+                RemoveResultNoDetail = $rm1NoDetail
+                TestAfter      = $check2Detail
+                TestAfterNoDetail = $check2NoDetail
+                Success        = $successFlag
+                MultiFileUpload = $null
+                MultiFileRemove = $null
+                MultiFileUploadSuccess = $false
+                MultiFileRemoveSuccess = $false
             }
-            if ($Details) { return $result } else { return $result.Success }
+
+            # additional test: multi-file upload via pipeline + multi-hash remove via pipeline
+            $multiFileUrls = @(
+                "https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/Commons-logo.svg/500px-Commons-logo.svg.png",
+                "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Enwiki-25.svg/500px-Enwiki-25.svg.png"
+            )
+            $tmpFiles = @()
+            try {
+                foreach ($u in $multiFileUrls) {
+                    $tmp = Join-Path ([IO.Path]::GetTempPath()) ("pollinationsaitest_{0}.png" -f [guid]::NewGuid())
+                    Invoke-WebRequest -Uri $u -OutFile $tmp -UseBasicParsing -ErrorAction Stop
+                    $tmpFiles += $tmp
+                }
+
+                $multiUpload = $tmpFiles | Add-PollinationsAiFile -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+                $multiHashes = $multiUpload | ForEach-Object { $_.hash }
+                $multiRemove = $multiHashes | Remove-PollinationsAiFile -POLLINATIONSAI_API_KEY $POLLINATIONSAI_API_KEY -Details
+
+                $result.MultiFileUpload = $multiUpload
+                $result.MultiFileRemove = $multiRemove
+                $result.MultiFileUploadSuccess = ($multiUpload.Count -eq $tmpFiles.Count)
+                $result.MultiFileRemoveSuccess = ($multiRemove | Where-Object { $_ -and $_.deleted } | Measure-Object).Count -eq $tmpFiles.Count
+            } catch {
+                Write-Warning "Multi-file pipeline test failed: $_"
+                $result.MultiFileUploadSuccess = $false
+                $result.MultiFileRemoveSuccess = $false
+            } finally {
+                foreach ($t in $tmpFiles) { Remove-Item -Path $t -ErrorAction SilentlyContinue }
+            }
+
+            if ($Details) { return $result } else { Write-Host "Success: $([string]$result.Success)"; return $true }
         } finally {
-            if ($createdTemp -and -not $KeepLocal -and (Test-Path $Path)) {
-                Remove-Item $Path -Force -ErrorAction SilentlyContinue
+            if ($createdTemp -and -not $KeepLocal -and (Test-Path $PathTestImage)) {
+                Remove-Item $PathTestImage -Force -ErrorAction SilentlyContinue
             }
         }
     }

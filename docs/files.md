@@ -4,15 +4,35 @@ You can add a file, like an image, to the [PollinationsAI Storage](https://enter
 
 ## Usage
 
+```powershell
+PS> Add-PollinationsAiFile image.jpg
+https://media.pollinations.ai/98dxd8x473x9ex21
+
+PS> Remove-PollinationsAiFile 98dxd8x473x9ex21 
+True
 ```
-> Add-PollinationsAiFile image.jpg
-Uploading image.jpg to PollinationsAi
-Done! Hash: 98dxd8x473x9ex21 | Url: https://media.pollinations.ai/98dxd8x473x9ex21 
+
+### You might want to add your key as environment variable to your profile
+
+```powershell
+Get-PollinationsAiByok -Add
+
+# or manually:
+
+"`n`n`$env:POLLINATIONSAI_API_KEY = `"sk_..............`"" >> $PROFILE.CurrentUserAllHosts
 ```
+... after restarting your powershell console, the key will be available.
+
+**For different options see [Readme > Bring-Your-Own-Key](https://github.com/BananaAcid/PollinationsAiPS?tab=readme-ov-file#you-might-want-to-add-your-key-as-environment-variable-to-your-profile)**
 
 
 ## Functions
 
-| command | alias | description
+| Command | Alias | Description |
 | --- | --- | --- |
-`Add-PollinationsAiFile <file>`  | `Copy-PAFile <file>` or<br> `cpaf <file>` | will upload it, returns the file item
+| `Add-PollinationsAiFile <file> [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Add-PAFile`, `cpaf` | Upload a file and return the url of the uploaded file for use. Using `-Details` get the an object with details (Content-Type, Content-Length, Hash, ...). |
+| `Get-PollinationsAiFile <hash> [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Get-PAFile`, `gpaf` | Download/retrieve file content by hash |
+| `Test-PollinationsAiFile <hash> [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Test-PAFile`, `tpaf` | Test if a file exists on the server |
+| `Remove-PollinationsAiFile <hash> [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Remove-PAFile`, `rpaf` | Delete a file from the server by hash |
+| `Export-PollinationsAiFile <hash> [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Export-PAFile`, `epaf` | Get metadata information for a file |
+| `Measure-PollinationsAiFile [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Measure-PAFile` | Test all file operations (upload, retrieve, delete) |

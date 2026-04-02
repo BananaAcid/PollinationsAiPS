@@ -27,7 +27,10 @@ Set-Alias -Name Get-PATxtX -Value Get-PollinationsAiTextEx
 . $PSScriptRoot\audio.ps1
 Set-Alias -Name Get-PAAud -Value Get-PollinationsAiAudio
 
-Export-ModuleMember -Function 'Get-PollinationsAiImage', 'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiAudio', 'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb' -Alias 'Get-PAImg', 'Get-PATxt',  'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'Get-PollinationsAiDeviceToken'
+Export-ModuleMember `
+    -Function 'Get-PollinationsAiImage', 'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiAudio', `
+        'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb' `
+    -Alias 'Get-PAImg', 'Get-PATxt',  'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'Get-PollinationsAiDeviceToken'
 
 # only export alias, if not already used by some other module
 if (-not (test-path Function:gpai)) {
@@ -48,13 +51,34 @@ if (-not (test-path Function:gpaa)) {
 }
 
 . $PSScriptRoot\files.ps1
-Set-Alias -Name Set-PADrive -Value Enable-PollinationsAiDrive
-Set-Alias -Name Get-PADrive -Value Get-PollinationsAiDrive
-Set-Alias -Name Copy-PAFile -Value Add-PollinationsAiFile
+Set-Alias -Name Add-PAFile -Value Add-PollinationsAiFile
+Set-Alias -Name Get-PAFile -Value Get-PollinationsAiFile
+Set-Alias -Name Test-PAFile -Value Test-PollinationsAiFile
+Set-Alias -Name Remove-PAFile -Value Remove-PollinationsAiFile
+Set-Alias -Name Export-PAFile -Value Export-PollinationsAiFile
+Set-Alias -Name Measure-PAFile -Value Measure-PollinationsAiFile
 
-Export-ModuleMember -Function 'Enable-PollinationsAiDrive', 'Get-PollinationsAiDrive', 'Add-PollinationsAiFile' -Alias 'Set-PADrive', 'Get-PADrive', 'Copy-PAFile'
+Export-ModuleMember `
+ -Function 'Add-PollinationsAiFile', 'Get-PollinationsAiFile', 'Test-PollinationsAiFile', 'Remove-PollinationsAiFile', 'Export-PollinationsAiFile', 'Measure-PollinationsAiFile' `
+ -Alias 'Add-PAFile', 'Get-PAFile', 'Test-PAFile', 'Remove-PAFile', 'Export-PAFile', 'Measure-PAFile', 'apaf', 'gpaf', 'tpaf', 'rpaf', 'epaf'
 
-if (-not (test-path Function:cpaf)) {
-    Set-Alias -Name cpaf -Value Add-PollinationsAiFile
-    Export-ModuleMember -Alias cpaf
+if (-not (test-path Function:apaf)) {
+    Set-Alias -Name apaf -Value Add-PollinationsAiFile
+    Export-ModuleMember -Alias apaf
+}
+if (-not (test-path Function:gpaf)) {
+    Set-Alias -Name gpaf -Value Get-PollinationsAiFile
+    Export-ModuleMember -Alias gpaf
+}
+if (-not (test-path Function:tpaf)) {
+    Set-Alias -Name tpaf -Value Test-PollinationsAiFile
+    Export-ModuleMember -Alias tpaf
+}
+if (-not (test-path Function:rpaf)) {
+    Set-Alias -Name rpaf -Value Remove-PollinationsAiFile
+    Export-ModuleMember -Alias rpaf
+}
+if (-not (test-path Function:epaf)) {
+    Set-Alias -Name epaf -Value Export-PollinationsAiFile
+    Export-ModuleMember -Alias epaf
 }
