@@ -1,6 +1,4 @@
 .history
-examples/wallpapers
-examples/set-wallpaper.ps1
 files.*.json
 
 ## A streamlined .gitignore for modern .NET projects
