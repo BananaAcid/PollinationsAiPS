@@ -5,6 +5,7 @@
 **Key Features:**
 * **Image Generation:** Create visuals from text prompts with customizable parameters.
 * **Text Generation:** Interface with LLMs for chat and text completion.
+* **Image to Text:** Talk about any image with your favorite LLM.
 * **Audio/Voice:** Support for text-to-speech and speech-to-text (depending on API availability).
 * **Pipeline Friendly:** Designed to work with PowerShell objects and pipes.
 * **Easy Integration:** Simple to use in your powershell workflows (.NET Framework and .NET Core) and Azure.
@@ -76,7 +77,7 @@ Get-PollinationsAiByok -Init
 > [!IMPORTANT]
 > ⭐ The specific documentation for each command
 > - `Get-PollinationsAiText` -> [/docs/text.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/text.md) (single line input text, but all model lists)
-> - `Get-PollinationsAiTextEx` -> [/docs/textEx.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/textEx.md) (for multiline texts)
+> - `Get-PollinationsAiTextEx` -> [/docs/textEx.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/textEx.md) (for multiline texts and image to text)
 > - `Get-PollinationsAiImage` -> [/docs/image.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/image.md)
 > - `Get-PollinationsAiAudio` -> [/docs/audio.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/audio.md)
 > - `Add-PollinationsAiFile`, ... -> [/docs/files.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/files.md) (PollinationsAI Storage)

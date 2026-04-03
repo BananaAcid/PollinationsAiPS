@@ -56,7 +56,9 @@ Get-PollinationsAiByok -Add
 > [!IMPORTANT]
 > Only **single line text input** is possible as prompt. But all model lists can be used (**text, audio/speech, image, video**) as long as the selected model has text as input modality.
 >
-> For **multiline input** (only **text and audio/speech**) use:
+> **No images** can be used as input.
+>
+> For **multiline input** (only **text and audio/speech**) and **images** use:
 >
 > `Get-PollinationsAiTextEx` -> [/docs/textEx.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/textEx.md)
 

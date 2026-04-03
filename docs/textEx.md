@@ -1,11 +1,11 @@
-# Ask PollinationsAI with large input Texts
+# Ask PollinationsAI with large input Texts and Images
 
 > [!Important]
 > ## When to use this? (The difference to `Get-PollinationsAiText`)
 >
 >`Get-PollinationsAiText` works across any model list (text, audio, video) by using the URL format for Pollination's simple-Endpoints.
 >
->`Get-PollinationsAiTextEx` **to support large texts and large texts from files**, it only works for text and audio (text to speech), using the respective PollinationAi's OpenAI compatible endpoints.
+>`Get-PollinationsAiTextEx` **to support large texts and large texts from files**, it only works for text, images and audio (text to text, image to text, text to speech), using the respective PollinationAi's OpenAI compatible endpoints.
 
 ## Usage
 
