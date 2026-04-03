@@ -134,9 +134,25 @@ Get-PollinationsAiTextEx $prompt
 ```
 
 ### Get a list of free models, that support input images with `-images`
+
 ```powershell
 Get-PollinationsAiTextEx -List -Details |? paid_only -eq $false |? input_modalities -contains image | Format-Table
 ```
+
+### Do some image-to-text with a local image
+
+```powershell
+# upload local image to PollinationsAI media storage
+$image = Add-PollinationsAiFile .\image.jpg
+
+# use a model that allows image input, and add the image or images
+Get-PollinationsAiTextEx "What is on this image?" -Model openai -Image $image
+
+# about 2 a once
+$image2 = Add-PollinationsAiFile .\image2.jpg
+Get-PollinationsAiTextEx "What is on this images?" -Model openai -Images $image,$image2
+```
+
 
 ### Look at some models and test a prompt
 

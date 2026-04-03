@@ -165,7 +165,7 @@ PS> Get-PollinationsAiImage -content "a cat" -settings $s -out acat.jpg
 $image = Add-PollinationsAiFile .\image.jpg
 
 # use a model that allows image input, and add the image or images
-Get-PollinationsAiText "What is on this image?" -Model "gemini-fast" -Settings @{image = $image}
+Get-PollinationsAiTextEx "What is on this image?" -Model openai -Image $image
 ```
 
 ### Generate an image and save it inline in an html file
