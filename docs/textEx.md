@@ -16,10 +16,10 @@ Get-PollinationsAiTextEx "a cat"
 
 ```powershell
 Get-PollinationsAiTextEx -?
-Get-PollinationsAiTextEx [-content] <string> [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache] [-colors]
-Get-PollinationsAiTextEx [-content] <string> -details [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache] [-colors]
-Get-PollinationsAiTextEx [-content] <string> -save [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
-Get-PollinationsAiTextEx [-content] <string> -out <string> [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
+Get-PollinationsAiTextEx [-content] <string> [-images <string|string[]>] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache] [-colors]
+Get-PollinationsAiTextEx [-content] <string> -details [-images <string|string[]>] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache] [-colors]
+Get-PollinationsAiTextEx [-content] <string> -save [-images <string|string[]>] [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
+Get-PollinationsAiTextEx [-content] <string> -out <string> [-images <string|string[]>] [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
 Get-PollinationsAiTextEx -listModels [-details]
 Get-PollinationsAiTextEx -getSettingsDefault
 ```
@@ -67,9 +67,10 @@ Get-PollinationsAiByok -Add
 >
 > `Get-PollinationsAiText` -> [/docs/textEx.md](https://github.com/BananaAcid/PollinationsAiPS/blob/main/docs/text.md)
 
-| arg | default | example | desc |
+| Arg, or Alias | Default | Example | Description |
 | --- | --- | --- | --- |
 | `<string>` <br>or `-content <string>` <br>or `-prompt <string>` | (required) | `"Some Text-Prompt"` | The **multi line** prompt for the content to be created. |
+| `-image <string>` <br>or `-images <string[]>` | | `"https://some_url"`<br>`"https://some_url","https://some_url"` | The images to used with the text prompt. You can provide a base64 encoded image, with the prefix `data:image/png;base64,` |
 | `-model <string>` | `"nova-fast"` | `"gemini"` | The model to use. [Currently available on PollinationsAI](https://enter.pollinations.ai/api/docs#tag/genpollinationsai/GET/image/{prompt}.query.model). |
 | `-POLLINATIONSAI_API_KEY <string>` <br>or `-key <string>` | `$env:POLLINATIONSAI_API_KEY` | `sk_12345678901234567890` | Use a PollonationsAI API Key - if left set to "", `$env:POLLINATIONSAI_API_KEY` is being checked. **Note: Add the API key to your environment variables.** |
 | `-settings <hashtable>` <br>or `-set <hashtable>` | [see below](#file-ask-pollinations_text-ps1-L159-L162) | `@{seed = 1234567890}` | A hashtable of settings passed to the Pollinations AI API. |
@@ -132,6 +133,10 @@ $prompt = "Summarize the following content in 1 paragraph:" + "`n`n`n" + $(gc .\
 Get-PollinationsAiTextEx $prompt
 ```
 
+### Get a list of free models, that support input images with `-images`
+```powershell
+Get-PollinationsAiTextEx -List -Details |? paid_only -eq $false |? input_modalities -contains image | Format-Table
+```
 
 ### Look at some models and test a prompt
 

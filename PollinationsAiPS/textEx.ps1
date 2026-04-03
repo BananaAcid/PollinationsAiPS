@@ -15,6 +15,12 @@
     Alternative to content.
     The prompt for the text.
 
+    .PARAMETER images
+    The images to used with the text prompt.
+    .PARAMETER image
+    Alternative to images.
+    The image to used with the text prompt.
+
     .PARAMETER settings
     A hashtable of settings passed to the Pollinations AI API.
 
@@ -104,6 +110,14 @@ Function Get-PollinationsAiTextEx {
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName='WithDetails', Position=0, HelpMessage="Prompt for the text")]
         [Alias("prompt")]
         $content,
+
+        [Parameter(Mandatory=$true, ParameterSetName='None', Position=0, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$true, ParameterSetName='WithOut', Position=0, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$true, ParameterSetName='WithSave', Position=0, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$true, ParameterSetName='WithDetails', Position=0, HelpMessage="The images to used with the text prompt")]
+        [Alias("img")]
+        [Alias("pic")]
+        [string[]]$images,
 
         [hashtable]
         [Parameter(Mandatory=$false, ParameterSetName='None', HelpMessage="A hashtable of settings passed to the Pollinations AI API, see https://enter.pollinations.ai/api/docs#tag/genpollinationsai/GET/text/{prompt}")]
@@ -291,23 +305,45 @@ Function Get-PollinationsAiTextEx {
             $requestSettings.modalities = @(, "text")
         }
 
-        $contentCombined = if ($Colors) { $ANSI_FORMATTING + "`n`n" + $content } else { $content }
-
         switch ($assignedModelList) {
             'text' {
                 $requestUrl = "https://gen.pollinations.ai/v1/chat/completions"
                 $requestSettings = @{
                     'messages' = @(
+                        # @{
+                        #     'content' = if ($Colors) { $ANSI_FORMATTING + "`n`n" + $content } else { $content }
+                        #     'role' = "user" # 'system'
+                        #     'name' = ""     # ??? in documents, but missing description
+                        #     'cache_control' = @{
+                        #         'type' = "ephemeral"
+                        #     }
+                        # }
                         @{
-                            'content' = $contentCombined
+                            'content' = @(
+                                if ($images) { $images |% { @{ 
+                                    'type' = "image_url"
+                                    'image_url' = @{ 'url' = $_  }
+                                }}}
+                                # $ANSI_FORMATTING
+                                if ($Colors) { @{
+                                    'type' = "text"
+                                    'text' = $ANSI_FORMATTING
+                                }}
+                                # Default prompt
+                                @{
+                                    'type' = "text"
+                                    'text' = $content
+                                } 
+                            )
                             'role' = "user" # 'system'
-                            'name' = ""     # ??? in documents, but missing description
                             'cache_control' = @{
                                 'type' = "ephemeral"
                             }
                         }
                     )
-                } + $requestSettings + $settings
+                } + $requestSettings
+
+                return $requestSettings
             }
             'audio' {
                 $requestUrl = "https://gen.pollinations.ai/v1/audio/speech"
@@ -316,7 +352,7 @@ Function Get-PollinationsAiTextEx {
                     'voice' = "alloy"  # only for openai-audio, see https://platform.openai.com/docs/guides/text-to-speech#voice-options
                     'response_format' = "mp3"
 
-                } + $requestSettings + $settings
+                } + $requestSettings
             }
             default {
                 throw "Generating from other model lists then text/audio is not supported." 
