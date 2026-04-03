@@ -187,14 +187,16 @@ $models |% { Get-PollinationsAiImage "a cat" -model $_ -out imgs\cat_$_.jpg }
 ```
         
 ### Tint an image and set as wallpaper
-        
+
+> [!TIP]
+> Production ready version (more featurs and task scheduler config) in [https://github.com/BananaAcid/Update-Wallpaper](https://github.com/BananaAcid/Update-Wallpaper)
+
+
 1. Get the `Set-Wallpaper` commandlet (choose the updated version) from here: https://www.joseespitia.com/2017/09/15/set-wallpaper-powershell-function/
     - save it as `set-wallpaper.ps1`
     - ⚠️ but **DO NOT** include the last line that says `Set-WallPaper -Image "C:\Wallpaper\Background.jpg" -Style Fit`
         
 2. Your script `Update-Wallpaper.ps1`
-    > [!TIP]
-    > Production ready version (more complete) in [/examples/Update-Wallpaper.ps1](https://github.com/BananaAcid/PollinationsAiPS/blob/main/examples/Update-Wallpaper.ps1)
     - Prerequisites:
         - Function `Get-PollinationsAiImage` is installed or saved, if saved only, you need to add `Import-Module .\PollinationsAiPS\1.0.0\PollinationsAiPS` after `param`
         - `$env:POLLINATIONSAI_API_KEY = "sk_..."` is set 
@@ -252,45 +254,6 @@ $models |% { Get-PollinationsAiImage "a cat" -model $_ -out imgs\cat_$_.jpg }
 > ```
 
 3. Use Windows Task Scheduler to set the script to be repeated and be started on system start ...
-    <details>
-    <summary>example code to manually add it</summary>
-
-    ⚠️ You need to change `pwsh.exe` into `powershell.exe` in the script, if you do not have Powershell 6+ installed.
-    ```ps1
-    # Define the script path and name for the task
-    $scriptPath = "C:\Scripts\update.wallpaper.ps1" # Replace with the actual path to your .ps1 file
-    $taskName = "ChangeWallpaperHourlyAtLogon"
-    $taskDescription = "Runs update.wallpaper.ps1 every hour after user login"
-    
-    # Check if pwsh.exe (preferred) or powershell.exe is available
-    $interpreter = Get-Command pwsh.exe, powershell.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
-
-    # Define the action (start powershell.exe with arguments)
-    #TEST: $action = New-ScheduledTaskAction -Execute "pwsh.exe" -Argument "-noExit -ExecutionPolicy Bypass -File `"$scriptPath`""
-    $action = New-ScheduledTaskAction -WorkingDirectory (Split-Path -Path $scriptPath) -Execute "C:\Windows\System32\conhost.exe" -Argument "--headless `"$interpreter`" -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$scriptPath`" "
-    
-    # Define the trigger (at logon, repeating every hour indefinitely)
-    # The -AtLogOn trigger doesn't directly support RepetitionInterval in one line
-    # We must use a workaround by setting the Repetition properties after creating the task
-    $trigger = New-ScheduledTaskTrigger -AtLogOn
-    
-    # Define the principal (runs as the current user when logged in)
-    $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive
-    
-    # Register the initial task (without the repetition settings configured directly)
-    Register-ScheduledTask -TaskName $taskName -Description $taskDescription -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
-    
-    # Retrieve the newly created task object to modify its repetition settings
-    $task = Get-ScheduledTask -TaskName $taskName
-    
-    # Set the repetition interval and duration
-    $task.Triggers.Repetition.Interval = "PT$([Math]::Round((New-TimeSpan -Hours 1).TotalMinutes, 0))M"
-    $task.Triggers.Repetition.StopAtDurationEnd = $false # Indefinite duration
-    
-    # Update the task with the modified trigger settings
-    $task | Set-ScheduledTask
-    ```
-    </details>
 
 ---
   
