@@ -111,10 +111,10 @@ Function Get-PollinationsAiTextEx {
         [Alias("prompt")]
         $content,
 
-        [Parameter(Mandatory=$true, ParameterSetName='None', Position=0, HelpMessage="The images to used with the text prompt")]
-        [Parameter(Mandatory=$true, ParameterSetName='WithOut', Position=0, HelpMessage="The images to used with the text prompt")]
-        [Parameter(Mandatory=$true, ParameterSetName='WithSave', Position=0, HelpMessage="The images to used with the text prompt")]
-        [Parameter(Mandatory=$true, ParameterSetName='WithDetails', Position=0, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$false, ParameterSetName='None', Position=0, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$false, ParameterSetName='WithOut', Position=0, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$false, ParameterSetName='WithSave', Position=0, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$false, ParameterSetName='WithDetails', Position=0, HelpMessage="The images to used with the text prompt")]
         [Alias("img")]
         [Alias("pic")]
         [string[]]$images,
