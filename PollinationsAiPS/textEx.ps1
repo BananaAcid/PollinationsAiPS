@@ -342,8 +342,6 @@ Function Get-PollinationsAiTextEx {
                         }
                     )
                 } + $requestSettings
-
-                return $requestSettings
             }
             'audio' {
                 $requestUrl = "https://gen.pollinations.ai/v1/audio/speech"
@@ -360,10 +358,10 @@ Function Get-PollinationsAiTextEx {
         }
 
         $requestSettingsBody = $requestSettings | ConvertTo-Json -Compress -Depth 100 # 5 is needed, but the src above might change in the future
-
+        
         # check for PowerShell 7+
         $canSkip = (Get-Command Invoke-WebRequest).Parameters.ContainsKey('SkipHttpErrorCheck')
-
+        
         if ($canSkip) {
             $response = Invoke-WebRequest -Uri $requestUrl -Method Post -Body $requestSettingsBody -Headers $headers -UseBasicParsing     -SkipHttpErrorCheck    # get the error message in the response
         }
