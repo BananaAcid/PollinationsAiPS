@@ -30,6 +30,9 @@
     Alternative to POLLINATIONSAI_API_KEY.
     The API key to use for the Pollinations AI API.
 
+    .PARAMETER bypassCache
+    Does bypasses the cloudflare cache, and sets the seed to random, resulting in a newly generated response.
+
     .PARAMETER colors
     Adds a string to the prompt to request ANSI formatting instead of Markdown.
     Can be set globally with $env:POLLINATIONSAIPS_COLORS=$true
@@ -46,8 +49,11 @@
     .PARAMETER getSettingsDefault
     Get the default settings for the Pollinations AI API.
 
-    .PaRAMETER listModels
+    .PARAMETER listModels
     Get the list of available models for the Pollinations AI API.
+
+    .PARAMETER availableOnlyList
+    Only get the list of available models available to the Pollinations AI API KEY.
 
     .EXAMPLE
     PS C:\> Get-PollinationsAiText -listModels
@@ -131,6 +137,7 @@ Function Get-PollinationsAiText {
         [Parameter(Mandatory=$false, ParameterSetName='WithOut')]
         [Parameter(Mandatory=$false, ParameterSetName='WithSave')]
         [Parameter(Mandatory=$false, ParameterSetName='WithDetails')]
+        [Parameter(Mandatory=$false, ParameterSetName='GetModelsList')]
         [Alias("key")]
         $POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
         
@@ -172,7 +179,11 @@ Function Get-PollinationsAiText {
         # stand alone
         [switch]
         [Parameter(Mandatory=$true, ParameterSetName='GetModelsList')]
-        $listModels = $false
+        $listModels = $false,
+
+        [switch]
+        [Parameter(Mandatory=$false, ParameterSetName='GetModelsList')]
+        $availableOnlyList = $false
     )
 
     begin {
@@ -213,6 +224,13 @@ Function Get-PollinationsAiText {
             voice = "alloy" # only for openai-audio, see https://platform.openai.com/docs/guides/text-to-speech#voice-options
         }
 
+        $headers = @{
+            "Authorization" = "Bearer $POLLINATIONSAI_API_KEY"
+        }
+
+
+        # ---------------------------------------------------------------
+
 
         if ($getSettingsDefault) {
             return $defaultSettingsByApi
@@ -227,9 +245,12 @@ Function Get-PollinationsAiText {
                 @('video', "https://gen.pollinations.ai/video/models")
             )
 
+            $listHeaders = If ($availableOnlyList) { $headers } Else { @{} }
+            $uris = $uris |% { ,($_ + $listHeaders) }
+
             $block = [scriptblock]{
-                $Key, $Uri = $_
-                try { $response = Invoke-WebRequest -Uri $Uri -Method Get -UseBasicParsing } catch { $response = $null }
+                $Key, $Uri, $localListHeaders = $_
+                try { $response = Invoke-WebRequest -Uri $Uri -Method Get -UseBasicParsing -Headers $localListHeaders } catch { $response = $null }
                 
                 if ($null -ne $response) {
                     return $response.content | ConvertFrom-Json |? {$_.output_modalities -Contains "text"} |% {$_ | Add-Member -MemberType NoteProperty -Name 'ModelsList' -Value $Key; $_} |% {if ($null -eq $_.paid_only) {$_ | Add-Member -MemberType NoteProperty -Name 'paid_only' -Value $false}; $_} | select 'paid_only', * -ExcludeProperty 'is_specialized', 'tools' -ErrorAction SilentlyContinue
@@ -278,10 +299,6 @@ Function Get-PollinationsAiText {
         # bypasses cloudflare cache
         if ($bypassCache) {
             $querySettings["cacheBuster"] = [string](Get-Date).Ticks + (Get-Random)
-        }
-
-        $headers = @{
-            "Authorization" = "Bearer $POLLINATIONSAI_API_KEY"
         }
 
         if ($assignedModelList -eq "") {

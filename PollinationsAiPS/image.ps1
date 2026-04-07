@@ -45,6 +45,9 @@
     .PaRAMETER listModels
     Get the list of available models for the Pollinations AI API.
 
+    .PARAMETER availableOnlyList
+    Only get the list of available models available to the Pollinations AI API KEY.
+
     .EXAMPLE
     PS C:\> Get-PollinationsAiImage -listModels
     PS C:\> Get-PollinationsAiImage -content "a cat" -model "flux" -save
@@ -122,6 +125,7 @@ Function Get-PollinationsAiImage {
         [Parameter(Mandatory=$false, ParameterSetName='WithOut')]
         [Parameter(Mandatory=$false, ParameterSetName='WithSave')]
         [Parameter(Mandatory=$false, ParameterSetName='WithDetails')]
+        [Parameter(Mandatory=$false, ParameterSetName='GetModelsList')]
         [Alias("key")]
         $POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
         
@@ -156,7 +160,11 @@ Function Get-PollinationsAiImage {
         # stand alone
         [switch]
         [Parameter(Mandatory=$true, ParameterSetName='GetModelsList')]
-        $listModels = $false
+        $listModels = $false,
+
+        [switch]
+        [Parameter(Mandatory=$false, ParameterSetName='GetModelsList')]
+        $availableOnlyList = $false
     )
 
 
@@ -184,6 +192,13 @@ Function Get-PollinationsAiImage {
         audio = "false"         # veo only
     }
 
+    $headers = @{
+        "Authorization" = "Bearer $POLLINATIONSAI_API_KEY"
+    }
+
+
+    # ---------------------------------------------------------------
+
 
     if ($getSettingsDefault) {
         return $defaultSettingsByApi
@@ -198,9 +213,12 @@ Function Get-PollinationsAiImage {
             @('video', "https://gen.pollinations.ai/video/models")
         )
 
+        $listHeaders = If ($availableOnlyList) { $headers } Else { @{} }
+        $uris = $uris |% { ,($_ + $listHeaders) }
+
         $block = [scriptblock]{
-            $Key, $Uri = $_
-            try { $response = Invoke-WebRequest -Uri $Uri -Method Get -UseBasicParsing } catch { $response = $null }
+            $Key, $Uri, $localListHeaders = $_
+            try { $response = Invoke-WebRequest -Uri $Uri -Method Get -UseBasicParsing -Headers $localListHeaders } catch { $response = $null }
             
             if ($null -ne $response) {
                 return $response.content | ConvertFrom-Json |? {$_.output_modalities -Contains "image"} |% {$_ | Add-Member -MemberType NoteProperty -Name 'ModelsList' -Value $Key; $_} |% {if ($null -eq $_.paid_only) {$_ | Add-Member -MemberType NoteProperty -Name 'paid_only' -Value $false}; $_} | select 'paid_only', * -ExcludeProperty 'is_specialized', 'tools' -ErrorAction SilentlyContinue
@@ -247,10 +265,6 @@ Function Get-PollinationsAiImage {
     if ($bypassCache) {
         $querySettings["cacheBuster"] = [string](Get-Date).Ticks + (Get-Random)
         $querySettings["seed"] = -1
-    }
-
-    $headers = @{
-        "Authorization" = "Bearer $POLLINATIONSAI_API_KEY"
     }
 
     $baseUrl= "https://gen.pollinations.ai/image"

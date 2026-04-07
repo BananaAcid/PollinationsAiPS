@@ -13,7 +13,7 @@ Get-PollinationsAiText [-content] <string> [-settings <hashtable>] [-model <stri
 Get-PollinationsAiText [-content] <string> -details [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache] [-colors]
 Get-PollinationsAiText [-content] <string> -save [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
 Get-PollinationsAiText [-content] <string> -out <string> [-details] [-settings <hashtable>] [-model <string>] [-assignedModelList <string>] [-POLLINATIONSAI_API_KEY <string>] [-bypassCache]
-Get-PollinationsAiText -listModels [-details]
+Get-PollinationsAiText -listModels [-details] [-availableOnlyList] [-POLLINATIONSAI_API_KEY <String>]
 Get-PollinationsAiText -getSettingsDefault
 ```
 
@@ -77,6 +77,7 @@ Get-PollinationsAiByok -Add
 | `-getSettingsDefault` <br>or `-get` | | | Get the default settings for the PollinationsAI API. |
 | `-listModels` <br>or `-list` | | | Outputs a table of models, that are [currently available on PollinationsAI](https://enter.pollinations.ai/api/docs#tag/genpollinationsai/GET/image/{prompt}.query.model). |
 | `-listModels -details` <br>or `-list -details` | | | Outputs a Hashtable of models, to be used in code. |
+| `-availableOnlyList` <br>or `-available` | | | Only get the list of available models available to the Pollinations AI API KEY. |
 | `-debug` | | | Outputs the request URI. (This URI does not need authorisation, because it accesses the cached result) |
 
 > [!IMPORTANT]

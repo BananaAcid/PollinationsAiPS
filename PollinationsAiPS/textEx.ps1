@@ -36,6 +36,9 @@
     Alternative to POLLINATIONSAI_API_KEY.
     The API key to use for the Pollinations AI API.
 
+    .PARAMETER bypassCache
+    Does bypasses the cloudflare cache, and sets the seed to random, resulting in a newly generated response.
+
     .PARAMETER colors
     Adds a string to the prompt to request ANSI formatting instead of Markdown.
     Can be set globally with $env:POLLINATIONSAIPS_COLORS=$true
@@ -54,6 +57,9 @@
 
     .PaRAMETER listModels
     Get the list of available models for the Pollinations AI API.
+
+    .PARAMETER availableOnlyList
+    Only get the list of available models available to the Pollinations AI API KEY.
 
     .EXAMPLE
     PS C:\> Get-PollinationsAiText -listModels
@@ -111,10 +117,10 @@ Function Get-PollinationsAiTextEx {
         [Alias("prompt")]
         $content,
 
-        [Parameter(Mandatory=$false, ParameterSetName='None', Position=0, HelpMessage="The images to used with the text prompt")]
-        [Parameter(Mandatory=$false, ParameterSetName='WithOut', Position=0, HelpMessage="The images to used with the text prompt")]
-        [Parameter(Mandatory=$false, ParameterSetName='WithSave', Position=0, HelpMessage="The images to used with the text prompt")]
-        [Parameter(Mandatory=$false, ParameterSetName='WithDetails', Position=0, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$false, ParameterSetName='None', Position=1, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$false, ParameterSetName='WithOut', Position=1, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$false, ParameterSetName='WithSave', Position=1, HelpMessage="The images to used with the text prompt")]
+        [Parameter(Mandatory=$false, ParameterSetName='WithDetails', Position=1, HelpMessage="The images to used with the text prompt")]
         [Alias("img")]
         [Alias("pic")]
         [string[]]$images,
@@ -145,6 +151,7 @@ Function Get-PollinationsAiTextEx {
         [Parameter(Mandatory=$false, ParameterSetName='WithOut')]
         [Parameter(Mandatory=$false, ParameterSetName='WithSave')]
         [Parameter(Mandatory=$false, ParameterSetName='WithDetails')]
+        [Parameter(Mandatory=$false, ParameterSetName='GetModelsList')]
         [Alias("key")]
         $POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
         
@@ -186,7 +193,11 @@ Function Get-PollinationsAiTextEx {
         # stand alone
         [switch]
         [Parameter(Mandatory=$true, ParameterSetName='GetModelsList')]
-        $listModels = $false
+        $listModels = $false,
+
+        [switch]
+        [Parameter(Mandatory=$false, ParameterSetName='GetModelsList')]
+        $availableOnlyList = $false
     )
 
     begin {
@@ -221,13 +232,22 @@ Function Get-PollinationsAiTextEx {
             temperature = 1.0
         }
 
+        $headers = @{
+            'Authorization' = "Bearer $POLLINATIONSAI_API_KEY"
+            'Content-Type' = "application/json"
+        }
 
+
+        # ---------------------------------------------------------------
+
+        
         if ($getSettingsDefault) {
             return $defaultSettingsByApi
         }
 
-
+        
         Function getList {
+
             $uris = @(
                 @('text', "https://gen.pollinations.ai/text/models"),
                 @('audio', "https://gen.pollinations.ai/audio/models")
@@ -235,14 +255,22 @@ Function Get-PollinationsAiTextEx {
                 # @('video', "https://gen.pollinations.ai/video/models")
             )
 
+            $listHeaders = If ($availableOnlyList) { $headers } Else { @{} }
+            $uris = $uris |% { ,($_ + $listHeaders) }
+
             $block = [scriptblock]{
-                $Key, $Uri = $_
-                try { $response = Invoke-WebRequest -Uri $Uri -Method Get -UseBasicParsing } catch { $response = $null }
+                $Key, $Uri, $localListHeaders = $_
+
+                # $using -> keyword parse error in PS <7
+                # $localListHeaders = $using:listHeaders
+
+                try { $response = Invoke-WebRequest -Uri $Uri -Method Get -UseBasicParsing -Headers $localListHeaders } catch { $response = $null }
                 
                 if ($null -ne $response) {
                     return $response.content | ConvertFrom-Json |? {$_.output_modalities -Contains "text"} |% {$_ | Add-Member -MemberType NoteProperty -Name 'ModelsList' -Value $Key; $_} |% {if ($null -eq $_.paid_only) {$_ | Add-Member -MemberType NoteProperty -Name 'paid_only' -Value $false}; $_} | select 'paid_only', * -ExcludeProperty 'is_specialized', 'tools' -ErrorAction SilentlyContinue
                 }
             }
+
 
             if ( (Get-Command ForEach-Object).Parameters.ContainsKey('Parallel') ) { # PowerShell 7+
                 $list = $uris |% -Parallel $block
@@ -285,11 +313,6 @@ Function Get-PollinationsAiTextEx {
         # bypasses cloudflare cache
         if ($bypassCache) {
             $requestSettings['cacheBuster'] = [string](Get-Date).Ticks + (Get-Random)
-        }
-
-        $headers = @{
-            'Authorization' = "Bearer $POLLINATIONSAI_API_KEY"
-            'Content-Type' = "application/json"
         }
 
         if ($assignedModelList -eq "") {
