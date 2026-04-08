@@ -23,7 +23,7 @@ Import-Module PollinationsAiPS
 
 
 <# 
-New-ModuleManifest -Path ".\PollinationsAiPS\PollinationsAiPS.psd1" `                                                                                                                                                                                                 in pwsh at 18:03:46
+New-ModuleManifest -Path ".\PollinationsAiPS\PollinationsAiPS.psd1" `
     -RootModule "PollinationsAiPS.psm1" `
     -Author "Nabil Redmann (BananaAcid)" `
     -Description "Power up your PowerShell scripts with AI! A seamless interface for Pollinations.ai to generate images, text, and audio. 🤖" `
