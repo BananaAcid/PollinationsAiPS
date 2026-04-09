@@ -29,7 +29,7 @@ Set-Alias -Name Get-PAAud -Value Get-PollinationsAiAudio
 
 Export-ModuleMember `
     -Function 'Get-PollinationsAiImage', 'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiAudio', `
-        'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb' `
+        'ConvertFrom-PollinationsAIAnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb' `
     -Alias 'Get-PAImg', 'Get-PATxt',  'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'Get-PollinationsAiDeviceToken'
 
 # only export alias, if not already used by some other module

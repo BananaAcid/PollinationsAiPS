@@ -475,7 +475,7 @@ Function Get-PollinationsAiTextEx {
                 FullContent = $response.Content | ConvertFrom-Json
             }}
             if (-not $isContentBytes -and $colors) { $ret += @{
-                FormattedContent = (unwrapResponseText($response) | ConvertFrom-AnsiEscapedString)
+                FormattedContent = (unwrapResponseText($response) | ConvertFrom-PollinationsAIAnsiEscapedString)
             }}
         }
 
@@ -486,7 +486,7 @@ Function Get-PollinationsAiTextEx {
             if ($isContentBytes) {
                 return $response.Content
             } elseif ($colors) {
-                return (unwrapResponseText($response) | ConvertFrom-AnsiEscapedString)
+                return (unwrapResponseText($response) | ConvertFrom-PollinationsAIAnsiEscapedString)
             } else {
                 return unwrapResponseText($response)
             }

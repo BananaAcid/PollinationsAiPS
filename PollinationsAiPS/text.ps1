@@ -410,7 +410,7 @@ Function Get-PollinationsAiText {
                 Uri = $uri
             }
             if (-not $isContentBytes -and $colors) { $ret += @{
-                FormattedContent = ($response.Content | ConvertFrom-AnsiEscapedString)
+                FormattedContent = ($response.Content | ConvertFrom-PollinationsAIAnsiEscapedString)
             }}
         }
 
@@ -421,7 +421,7 @@ Function Get-PollinationsAiText {
             if ($isContentBytes -or $colors -eq $false) {
                 return $response.Content
             } elseif ($colors) {
-                return ($response.Content | ConvertFrom-AnsiEscapedString)
+                return ($response.Content | ConvertFrom-PollinationsAIAnsiEscapedString)
             }
         }
     }

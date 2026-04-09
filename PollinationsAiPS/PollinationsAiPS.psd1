@@ -12,7 +12,7 @@
     RootModule = 'PollinationsAiPS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.3.1'
+    ModuleVersion = '1.3.2'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Desk', 'Core')
@@ -71,7 +71,7 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
         'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiImage', 'Get-PollinationsAiAudio',
-        'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb',
+        'ConvertFrom-PollinationsAIAnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb',
         'Add-PollinationsAiFile', 'Get-PollinationsAiFile', 'Test-PollinationsAiFile', 'Remove-PollinationsAiFile', 'Export-PollinationsAiFile', 'Get-PollinationsAiEncodedImage', 'Measure-PollinationsAiFile'
     )
 
