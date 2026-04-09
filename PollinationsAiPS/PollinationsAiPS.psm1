@@ -56,11 +56,12 @@ Set-Alias -Name Get-PAFile -Value Get-PollinationsAiFile
 Set-Alias -Name Test-PAFile -Value Test-PollinationsAiFile
 Set-Alias -Name Remove-PAFile -Value Remove-PollinationsAiFile
 Set-Alias -Name Export-PAFile -Value Export-PollinationsAiFile
+Set-Alias -Name Get-PAEncImg -Value Get-PollinationsAiEncodedImage
 Set-Alias -Name Measure-PAFile -Value Measure-PollinationsAiFile
 
 Export-ModuleMember `
- -Function 'Add-PollinationsAiFile', 'Get-PollinationsAiFile', 'Test-PollinationsAiFile', 'Remove-PollinationsAiFile', 'Export-PollinationsAiFile', 'Measure-PollinationsAiFile' `
- -Alias 'Add-PAFile', 'Get-PAFile', 'Test-PAFile', 'Remove-PAFile', 'Export-PAFile', 'Measure-PAFile', 'apaf', 'gpaf', 'tpaf', 'rpaf', 'epaf'
+ -Function 'Add-PollinationsAiFile', 'Get-PollinationsAiFile', 'Test-PollinationsAiFile', 'Remove-PollinationsAiFile', 'Export-PollinationsAiFile', 'Get-PollinationsAiEncodedImage', 'Measure-PollinationsAiFile' `
+ -Alias 'Add-PAFile', 'Get-PAFile', 'Test-PAFile', 'Remove-PAFile', 'Export-PAFile', 'Get-PAEncImg', 'Measure-PAFile', 'apaf', 'gpaf', 'tpaf', 'rpaf', 'epaf', 'gpaei'
 
 if (-not (test-path Function:apaf)) {
     Set-Alias -Name apaf -Value Add-PollinationsAiFile
@@ -81,4 +82,8 @@ if (-not (test-path Function:rpaf)) {
 if (-not (test-path Function:epaf)) {
     Set-Alias -Name epaf -Value Export-PollinationsAiFile
     Export-ModuleMember -Alias epaf
+}
+if (-not (test-path Function:gpaei)) {
+    Set-Alias -Name gpaei -Value Get-PollinationsAiEncodedImage
+    Export-ModuleMember -Alias gpaei
 }

@@ -9,13 +9,12 @@ Function Add-PollinationsAiFile {
         [switch]$Details
     )
     process {
-        if (-not $POLLINATIONSAI_API_KEY) { 
-            throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" 
-        }
+        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" }
 
         if (-not (Test-Path $Path -PathType Leaf)) {
             throw "Cannot find file path '$Path'. Only local file paths are supported for raw binary upload."
         }
+
         $localPath = Resolve-Path $Path
 
         $uri = "https://media.pollinations.ai/upload"
@@ -43,10 +42,10 @@ Function Add-PollinationsAiFile {
                     Headers = $response.Headers
                     Content = $response.Content
                 } 
-            } else { return $url }
-        } catch {
-            throw $_
+            }
+            else { return $url }
         }
+        catch { throw $_ }
     }
 }
 
@@ -72,12 +71,10 @@ Function Get-PollinationsAiFile {
                     "Content-Type" = $response.Headers.'Content-Type';
                     "Content-Length" = $response.Headers.'Content-Length';
                 }
-            } else {
-                return $response.Content
             }
-        } catch {
-            throw $_
-        }
+            else { return $response.Content }
+        } 
+        catch { throw $_ }
     }
 }
 
@@ -89,12 +86,11 @@ Function Remove-PollinationsAiFile {
         [switch]$Details
     )
     process {
-        if (-not $POLLINATIONSAI_API_KEY) { 
-            throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" 
-        }
-        $headers = @{ "Content-Type" = "application/json"; Authorization = "Bearer $POLLINATIONSAI_API_KEY" }
+        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" }
 
+        $headers = @{ "Content-Type" = "application/json"; Authorization = "Bearer $POLLINATIONSAI_API_KEY" }
         $uri = "https://media.pollinations.ai/$Hash"
+
         try {
             $response = Invoke-WebRequest -Uri $uri -Method Delete -Headers $headers -ErrorAction Stop
             if ($Details) { 
@@ -105,8 +101,10 @@ Function Remove-PollinationsAiFile {
                     Headers = $response.Headers
                     Content = $response.Content
                 } 
-            } else { return $true }
-        } catch {
+            } 
+            else { return $true }
+        } 
+        catch {
             if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
                 if ($Details) { 
                     $contentJson = $_.Exception.Response.Content | ConvertFrom-Json
@@ -116,8 +114,10 @@ Function Remove-PollinationsAiFile {
                         Headers = $_.Exception.Response.Headers
                         Content = $_.Exception.Response.Content
                     } 
-                } else { return $false }
-            } else { throw $_ }
+                } 
+                else { return $false }
+            } 
+            else { throw $_ }
         }
     }
 }
@@ -137,10 +137,15 @@ Function Export-PollinationsAiFile {
         $uri = "https://media.pollinations.ai/$Hash/metadata"
         try {
             $response = Invoke-WebRequest -Uri $uri -Method Get -Headers $headers -ErrorAction Stop
-            if ($Details) { return @{ Headers = $response.Headers; Content = $response.Content } } else { return ($response.Content | ConvertFrom-Json) }
-        } catch {
-            throw $_
+            if ($Details) {
+                return @{
+                    Headers = $response.Headers
+                    Content = $response.Content
+                }
+            }
+            else { return ($response.Content | ConvertFrom-Json) }
         }
+        catch { throw $_ }
     }
 }
 
@@ -152,9 +157,7 @@ Function Test-PollinationsAiFile {
         [switch]$Details
     )
     process {
-        if (-not $POLLINATIONSAI_API_KEY) { 
-            throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" 
-        }
+        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" }
 
         $uri = "https://media.pollinations.ai/$Hash"
         try {
@@ -166,8 +169,10 @@ Function Test-PollinationsAiFile {
                     Headers = $response.Headers
                     Success = $true
                 } 
-            } else { return $true }
-        } catch {
+            }
+            else { return $true }
+        }
+        catch {
             if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
                 if ($Details) { 
                     return @{
@@ -176,14 +181,56 @@ Function Test-PollinationsAiFile {
                         Headers = $_.Exception.Response.Headers
                         Success = $false
                     } 
-                } else { return $false }
-            } else { throw $_ }
+                }
+                else { return $false }
+            }
+            else { throw $_ }
         }
     }
 }
 
+Function Get-PollinationsAiEncodedImage {
+    # `data:image/png;base64,` or  `data:image/jpeg;base64,`
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Path,
+        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        [switch]$Details
+    )
+    process {
+        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" }
 
+        try {
+            Add-Type -AssemblyName System.Web
+            
+            $filePath = Resolve-Path $Path
+            $bytes = [System.IO.File]::ReadAllBytes($filePath)
+            $encodedImage = [System.Convert]::ToBase64String($bytes)
+            
+            # check $bytes the file content, what content type the image has (GetMimeMapping won't work)
+            $type = ""
+            if ($bytes[0] -eq 0x89 -and $bytes[1] -eq 0x50 -and $bytes[2] -eq 0x4E -and $bytes[3] -eq 0x47) { $type = "png" }
+            if ($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xD8 -and $bytes[2] -eq 0xFF -and $bytes[3] -eq 0xE0) { $type = "jpeg" }
+            if ($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xD8 -and $bytes[2] -eq 0xFF -and $bytes[3] -eq 0xE1) { $type = "jpeg" }
+            if ($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xD8 -and $bytes[2] -eq 0xFF -and $bytes[3] -eq 0xE2) { $type = "jpeg" }
+            if ($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xD8 -and $bytes[2] -eq 0xFF -and $bytes[3] -eq 0xE3) { $type = "jpeg" }
 
+            if ($type -eq "") { throw "File is not an jpeg/png image!" }
+
+            # content
+            $content = "data:image/$type;base64,$encodedImage"
+            if ($Details) { 
+                return @{
+                    Content = $content
+                    ContentType = "image/$type"
+                    Path = $filePath
+                }
+            }
+            else { return $content }
+        }
+        catch { throw $_ }
+    }
+}
 
 
 <#
@@ -202,9 +249,7 @@ Function Measure-PollinationsAiFile {
     )
 
     process {
-        if (-not $POLLINATIONSAI_API_KEY) { 
-            throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" 
-        }
+        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" }
 
         $createdTemp = $false
         try {

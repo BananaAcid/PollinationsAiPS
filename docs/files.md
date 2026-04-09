@@ -35,4 +35,5 @@ Get-PollinationsAiByok -Add
 | `Test-PollinationsAiFile <hash> [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Test-PAFile`, `tpaf` | Test if a file exists on the server |
 | `Remove-PollinationsAiFile <hash> [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Remove-PAFile`, `rpaf` | Delete a file from the server by hash |
 | `Export-PollinationsAiFile <hash> [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Export-PAFile`, `epaf` | Get metadata information for a file |
+| `Get-PollinationsAiEncodedImage [-Path] <string>  [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Get-PAEncImg`, `gpaei` | Encode local image (PNG/JPEG only) to Base64 with content type prefix, for use as image URI (like `Get-PollinationsAiTextEx -Image $ImageUri` ) |
 | `Measure-PollinationsAiFile [-Details] [-POLLINATIONSAI_API_KEY <key>]` | `Measure-PAFile` | Test all file operations (upload, retrieve, delete) |

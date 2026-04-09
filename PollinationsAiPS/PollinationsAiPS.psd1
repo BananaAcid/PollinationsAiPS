@@ -12,7 +12,7 @@
     RootModule = 'PollinationsAiPS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.3.0'
+    ModuleVersion = '1.3.1'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Desk', 'Core')
@@ -72,7 +72,7 @@
     FunctionsToExport = @(
         'Get-PollinationsAiText', 'Get-PollinationsAiTextEx', 'Get-PollinationsAiImage', 'Get-PollinationsAiAudio',
         'ConvertFrom-AnsiEscapedString', 'Get-PollinationsAiByok', 'Get-PollinationsAiByokWeb',
-        'Add-PollinationsAiFile', 'Get-PollinationsAiFile', 'Test-PollinationsAiFile', 'Remove-PollinationsAiFile', 'Export-PollinationsAiFile', 'Measure-PollinationsAiFile'
+        'Add-PollinationsAiFile', 'Get-PollinationsAiFile', 'Test-PollinationsAiFile', 'Remove-PollinationsAiFile', 'Export-PollinationsAiFile', 'Get-PollinationsAiEncodedImage', 'Measure-PollinationsAiFile'
     )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
@@ -84,7 +84,7 @@
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
     AliasesToExport = @(
         'Get-PAImg', 'Get-PATxt', 'Get-PATxtX', 'Get-PAAud', 'Get-PAByok', 'gpai', 'gpat', 'gpatx', 'gpaa', 'Get-PollinationsAiDeviceToken',
-        'Add-PAFile', 'Get-PAFile', 'Test-PAFile', 'Remove-PAFile', 'Export-PAFile', 'Measure-PAFile', 'apaf', 'gpaf', 'tpaf', 'rpaf', 'epaf'
+        'Add-PAFile', 'Get-PAFile', 'Test-PAFile', 'Remove-PAFile', 'Export-PAFile', 'Get-PAEncImg', 'Measure-PAFile', 'apaf', 'gpaf', 'tpaf', 'rpaf', 'epaf', 'gpaei'
     )
 
     # DSC resources to export from this module

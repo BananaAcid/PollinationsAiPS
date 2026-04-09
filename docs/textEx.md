@@ -70,7 +70,7 @@ Get-PollinationsAiByok -Add
 | Arg, or Alias | Default | Example | Description |
 | --- | --- | --- | --- |
 | `<string>` <br>or `-content <string>` <br>or `-prompt <string>` | (required) | `"Some Text-Prompt"` | The **multi line** prompt for the content to be created. |
-| `-image <string>` <br>or `-images <string[]>` | | `"https://some_url"`<br>`"https://some_url","https://some_url"` | The images to used with the text prompt. You can provide a base64 encoded image, with the prefix `data:image/png;base64,` |
+| `-image <string>` <br>or `-images <string[]>` | | `"https://some_url"`<br>`"https://some_url","https://some_url"` | The images to used with the text prompt. You can provide a base64 encoded image, with the prefix `data:image/png;base64,` or  `data:image/jpeg;base64,` |
 | `-model <string>` | `"nova-fast"` | `"gemini"` | The model to use. [Currently available on PollinationsAI](https://enter.pollinations.ai/api/docs#tag/genpollinationsai/GET/image/{prompt}.query.model). |
 | `-POLLINATIONSAI_API_KEY <string>` <br>or `-key <string>` | `$env:POLLINATIONSAI_API_KEY` | `sk_12345678901234567890` | Use a PollonationsAI API Key - if left set to "", `$env:POLLINATIONSAI_API_KEY` is being checked. **Note: Add the API key to your environment variables.** |
 | `-settings <hashtable>` <br>or `-set <hashtable>` | [see below](#file-ask-pollinations_text-ps1-L159-L162) | `@{seed = 1234567890}` | A hashtable of settings passed to the Pollinations AI API. |
@@ -149,7 +149,7 @@ $image = Add-PollinationsAiFile .\image.jpg
 # use a model that allows image input, and add the image or images
 Get-PollinationsAiTextEx "What is on this image?" -Model openai -Image $image
 
-# about 2 a once
+# about 2 at once
 $image2 = Add-PollinationsAiFile .\image2.jpg
 Get-PollinationsAiTextEx "What is on this images?" -Model openai -Images $image,$image2
 ```

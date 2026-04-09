@@ -154,9 +154,12 @@ Get-PollinationsAiImage -List -Details |? paid_only -eq $false |? input_modaliti
 #### Do some image-to-text with a local image
 
 ```powershell
+# show a list of models supporting images, to choose from, like gemini-fast
+Get-PollinationsAiTextEx -List -Details -available |? input_modalities -contains image | Select paid_only,name,pricing  | Format-Table
+
 # upload local image to PollinationsAI media storage
-$image = Add-PollinationsAiFile .\image.jpg
+$imageUrl = Add-PollinationsAiFile .\image.jpg
 
 # use a model that allows image input, and add the image or images
-Get-PollinationsAiText "What is on this image?" -Model "gemini-fast" -Settings @{image = $image}
+Get-PollinationsAiTextEx "What is on this image?" -Model "gemini-fast" -Image $imageUrl
 ```
