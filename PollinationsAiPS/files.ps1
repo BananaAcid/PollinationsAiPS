@@ -65,11 +65,14 @@ Function Get-PollinationsAiFile {
         try {
             $response = Invoke-WebRequest -Uri $uri -Method Get -Headers $headers -UseBasicParsing -ErrorAction Stop
             if ($Details) {
-                return @{ 
-                    Headers = $response.Headers;
-                    Content = $response.Content;
-                    "Content-Type" = $response.Headers.'Content-Type';
-                    "Content-Length" = $response.Headers.'Content-Length';
+                return @{
+                    id = $response.Headers.'X-Content-Hash' -or $Hash
+                    hash = $Hash
+                    url = $uri
+                    contentType = $response.Headers.'Content-Type'
+                    size = $response.Headers.'Content-Length'
+                    Headers = $response.Headers
+                    Content = $response.Content
                 }
             }
             else { return $response.Content }
@@ -97,7 +100,9 @@ Function Remove-PollinationsAiFile {
                 $contentJson = $response.Content | ConvertFrom-Json
                 return @{
                     deleted = $contentJson.deleted
-                    id = $contentJson.id
+                    id = $contentJson.id # API is missing heders: X-Content-Hash,X-Content-Size - but provides Content.id
+                    hash = $Hash
+                    url = $uri
                     Headers = $response.Headers
                     Content = $response.Content
                 } 
@@ -111,6 +116,8 @@ Function Remove-PollinationsAiFile {
                     return @{
                         deleted = $contentJson.deleted -or $false
                         id = $contentJson.id -or $Hash
+                        hash = $Hash
+                        url = $uri
                         Headers = $_.Exception.Response.Headers
                         Content = $_.Exception.Response.Content
                     } 
@@ -139,6 +146,9 @@ Function Export-PollinationsAiFile {
             $response = Invoke-WebRequest -Uri $uri -Method Get -Headers $headers -ErrorAction Stop
             if ($Details) {
                 return @{
+                    id = $Hash
+                    hash = $Hash
+                    url = $uri
                     Headers = $response.Headers
                     Content = $response.Content
                 }
@@ -164,10 +174,13 @@ Function Test-PollinationsAiFile {
             $response = Invoke-WebRequest -Uri $uri -Method Head -UseBasicParsing -ErrorAction Stop
             if ($Details) { 
                 return @{
-                    ContentType = $response.Headers.'Content-Type'
-                    ContentLength = $response.Headers.'Content-Length'
+                    success = $true
+                    id = $Hash # API is missing headers: X-Content-Hash,X-Content-Size
+                    hash = $Hash
+                    url = $uri
+                    contentType = $response.Headers.'Content-Type'
+                    contentLength = $response.Headers.'Content-Length'
                     Headers = $response.Headers
-                    Success = $true
                 } 
             }
             else { return $true }
@@ -176,10 +189,13 @@ Function Test-PollinationsAiFile {
             if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
                 if ($Details) { 
                     return @{
-                        ContentType = $_.Exception.Response.Headers.'Content-Type'
-                        ContentLength = $_.Exception.Response.Headers.'Content-Length'
+                        success = $false
+                        id = $Hash # API is missing headers: X-Content-Hash,X-Content-Size
+                        hash = $Hash
+                        url = $uri
+                        contentType = $_.Exception.Response.Headers.'Content-Type'
+                        contentLength = $_.Exception.Response.Headers.'Content-Length'
                         Headers = $_.Exception.Response.Headers
-                        Success = $false
                     } 
                 }
                 else { return $false }
@@ -221,9 +237,11 @@ Function Get-PollinationsAiEncodedImage {
             $content = "data:image/$type;base64,$encodedImage"
             if ($Details) { 
                 return @{
+                    id = $Hash
+                    hash = $Hash
                     Content = $content
-                    ContentType = "image/$type"
-                    Path = $filePath
+                    contentType = "image/$type"
+                    path = $filePath
                 }
             }
             else { return $content }

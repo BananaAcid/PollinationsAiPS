@@ -90,6 +90,11 @@ Get-PollinationsAiByok -Init
 > - Change the windows wallpaper with AI generated images, based on an existing image, colored and tinted to a specific color
 > - [/examples/Update-Wallpaper.ps1](https://github.com/BananaAcid/PollinationsAiPS/blob/main/examples/Update-Wallpaper.README.md)
 
+> [!NOTE]
+> Changelog
+> - [1.3.2...1.4.0](https://github.com/BananaAcid/PollinationsAiPS/compare/1.3.2...1.4.0)
+> - [1.3.1...1.3.2](https://github.com/BananaAcid/PollinationsAiPS/compare/1.3.1...1.3.2)
+
 ## Example Usage
 
 ### Generate a text based on the prompt "a cat"
