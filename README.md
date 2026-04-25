@@ -84,6 +84,11 @@ Get-PollinationsAiByok -Init
 > - `ConvertFrom-PollinationsAIAnsiEscapedString`
 > - `Get-PollinationsAiByok`, **Alias**: `Get-PAByok`, `Get-PollinationsAiDeviceToken`
 > - `Get-PollinationsAiByokWeb` (Old method, but can be used to redirect to a website that receives the confirmation/apikey)
+>
+> ---
+>
+> On an error, you can check `$global:LASTEXITCODE` for the HTTP Status code of the last request to the PollinationsAI REST API Endpoint.
+>
 > ---
 > ### Update-Wallpaper - Periodically recolor your desktop wallpaper with AI
 > - Is a fully working example project

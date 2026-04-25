@@ -187,6 +187,7 @@ Function Get-PollinationsAiText {
     )
 
     begin {
+        $global:LASTEXITCODE = 0
         $contentIn = ""
     }
 

@@ -193,6 +193,8 @@ Function Get-PollinationsAiAudio {
         "Authorization" = "Bearer $POLLINATIONSAI_API_KEY"
     }
 
+    $global:LASTEXITCODE = 0
+
 
     # ---------------------------------------------------------------
 
