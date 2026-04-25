@@ -35,7 +35,7 @@ Function Add-PollinationsAiFile {
                 return @{
                     id = $contentJson.id
                     hash = $contentJson.id
-                    url = $contentJson.url
+                    uri = $contentJson.url
                     contentType = $contentJson.contentType
                     size = $contentJson.size
                     duplicate = $contentJson.duplicate
@@ -102,7 +102,7 @@ Function Remove-PollinationsAiFile {
                     deleted = $contentJson.deleted
                     id = $contentJson.id # API is missing heders: X-Content-Hash,X-Content-Size - but provides Content.id
                     hash = $Hash
-                    url = $uri
+                    uri = $uri
                     Headers = $response.Headers
                     Content = $response.Content
                 } 
@@ -117,7 +117,7 @@ Function Remove-PollinationsAiFile {
                         deleted = $contentJson.deleted -or $false
                         id = $contentJson.id -or $Hash
                         hash = $Hash
-                        url = $uri
+                        uri = $uri
                         Headers = $_.Exception.Response.Headers
                         Content = $_.Exception.Response.Content
                     } 
@@ -148,7 +148,7 @@ Function Export-PollinationsAiFile {
                 return @{
                     id = $Hash
                     hash = $Hash
-                    url = $uri
+                    uri = $uri
                     Headers = $response.Headers
                     Content = $response.Content
                 }
@@ -177,7 +177,7 @@ Function Test-PollinationsAiFile {
                     success = $true
                     id = $Hash # API is missing headers: X-Content-Hash,X-Content-Size
                     hash = $Hash
-                    url = $uri
+                    uri = $uri
                     contentType = $response.Headers.'Content-Type'
                     contentLength = $response.Headers.'Content-Length'
                     Headers = $response.Headers
@@ -192,7 +192,7 @@ Function Test-PollinationsAiFile {
                         success = $false
                         id = $Hash # API is missing headers: X-Content-Hash,X-Content-Size
                         hash = $Hash
-                        url = $uri
+                        uri = $uri
                         contentType = $_.Exception.Response.Headers.'Content-Type'
                         contentLength = $_.Exception.Response.Headers.'Content-Length'
                         Headers = $_.Exception.Response.Headers

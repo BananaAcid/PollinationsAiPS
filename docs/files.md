@@ -50,7 +50,7 @@ Always:
 ```
 id    - string, taken from response if possible, usually equal to hash, but PollinationsAI API might change
 hash  - string, the file hash
-url   - string, the uri used for the REST call
+uri   - string, the uri used for the REST call
 ```
 
 Depending on the cmdlet:
