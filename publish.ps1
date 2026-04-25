@@ -6,6 +6,14 @@ Test-ModuleManifest -Path ".\PollinationsAiPS\PollinationsAiPS.psd1"
 
 Test-ModuleManifest -Path ".\PollinationsAiPS\PollinationsAiPS.psd1" | Select-Object -expandproperty exportedcommands | format-table
 
+Write-Host "`n"
+Write-Host "1. DID I UPDATE THE: version number IN THE MANIFEST?" -ForegroundColor Yellow
+Write-Host "`n"
+Write-Host "2. DID I UPDATE THE: changelog url in the README?" -ForegroundColor Yellow
+Write-Host "`n"
+Write-Host "3. DID I ADD: a new version tag IN THE REPO?" -ForegroundColor Yellow
+Write-Host "`n"
+
 pause
 Publish-Module -Path ".\PollinationsAiPS" -NuGetApiKey $env:NUGET_API_KEY -Verbose
 
