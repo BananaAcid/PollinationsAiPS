@@ -14,9 +14,16 @@ $script:BaseUri = "https://media.pollinations.ai"
 Function Add-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Path,
-        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
-        [switch]$Details
+        [string]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        $Path,
+        
+        [string]
+        [Alias("key")]
+        $POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        
+        [switch]
+        $Details
     )
 
     begin {
@@ -33,35 +40,48 @@ Function Add-PollinationsAiFile {
 
         $localPath = Resolve-Path $Path
 
-        $uri = "https://media.pollinations.ai/upload"
+        Write-Debug "Uploading file: $localPath"
+
+        $uri = "$($script:BaseUri)/upload"
         $headers = @{ Authorization = "Bearer $POLLINATIONSAI_API_KEY" }
 
-        try {
-            $response = Invoke-WebRequest `
-                -Uri $uri `
-                -Method Post `
-                -Headers $headers `
-                -InFile $localPath `
-                -ErrorAction Stop
+        $response,$err = script:IWR -Uri $uri -Method Post -Headers $headers -InFile $localPath -filterTextHeaders $false # we expect JSON
+
+        $url = $null
+        $contentJson = @{}
+        if (-not $response.error) {
+            Write-Debug "File uploaded successfully"
 
             $contentJson = $response.Content | ConvertFrom-Json
             $url = if ($contentJson.url) { $contentJson.url.ToString().Trim() } else { $response.Content.Trim() }
-
-            if ($Details) { 
-                return @{
-                    id = $contentJson.id
-                    hash = $contentJson.id
-                    uri = $contentJson.url
-                    contentType = $contentJson.contentType
-                    size = $contentJson.size
-                    duplicate = $contentJson.duplicate
-                    Headers = $response.Headers
-                    Content = $response.Content
-                } 
-            }
-            else { return $url }
         }
-        catch { throw $_ }
+
+        Write-Debug "File $($contentJson.id) URL: $url"
+
+        if ($Details) { 
+            $ret = @{
+                id = $contentJson.id
+                hash = $contentJson.id
+                uri = $(if ($url) { $url } else { $uri })
+                contentType = $contentJson.contentType
+                size = $contentJson.size
+                duplicate = $contentJson.duplicate
+                Headers = $response.Headers
+                Content = $response.Content
+                StatusCode = $response.StatusCode
+            }
+            if ($err) { $ret += @{ error = $err} }
+        }
+        else {
+            if ($err) {
+                $ret = $null # in case of -ErrorAction SilentlyContinue
+            }
+            else {
+                ret = $url
+            }
+        }
+
+        return $ret
     }
 }
 
@@ -564,23 +584,34 @@ Function script:IWR {
         [Parameter(Mandatory=$true)]$Uri,
         $Method = "Get",
         $Headers = @{},
-        $filterTextHeaders = $false
+        $filterTextHeaders = $true,   # in case we expect JSON, set filterTextHeaders to false
+        
+        $InFile = $null
     )
 
     if ($script:DoDebug) { $DebugPreference = $script:DoDebug }
 
     Write-Debug "URI: $uri"
 
+    
+    # prepare additional (known) parameters, if needed
+    if ($InFile) {
+        $params = @{ InFile = $InFile }
+    }
+    else {
+        $params = @{}
+    }
+    
     # check for PowerShell 7+
     $canSkip = (Get-Command Invoke-WebRequest).Parameters.ContainsKey('SkipHttpErrorCheck')
 
     if ($canSkip) {
-        $response = Invoke-WebRequest -Uri $Uri -Method $Method -Headers $Headers -UseBasicParsing     -SkipHttpErrorCheck    # get the error message in the response
+        $response = Invoke-WebRequest -Uri $Uri -Method $Method -Headers $Headers   @params   -UseBasicParsing     -SkipHttpErrorCheck    # get the error message in the response
     }
     else {
         # Fallback for PowerShell 5.1 -->  does only show the status code, since the response is dropped by Invoke-WebRequest
         try {
-            $response = Invoke-WebRequest -Uri $Uri -Method $Method -Headers $Headers -UseBasicParsing     -ErrorAction Stop
+            $response = Invoke-WebRequest -Uri $Uri -Method $Method -Headers $Headers   @params   -UseBasicParsing     -ErrorAction Stop
         }
         catch {
             # no message from content possible on error ...

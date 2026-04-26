@@ -59,11 +59,11 @@ Depending on the cmdlet:
 ```
 contentType  - string, only with: Add, Get, Test
 duplicate    - boolean, only with: Add
-size         - int, only with: add, Get, Test
+size         - int, only with: Add, Get, Test
 filePath     - string, only with: Get
 success      - boolean, only with: Test
 deleted      - boolean, only with: Remove
-error        - {Message, StatusCode, Uri, ResponseInstance}, only exists in case of an error, only with: Get
+error        - {Message, StatusCode, Uri, ResponseInstance}, only exists in case of an error, only with Add, Get
 ```
 
 # `Get-PollinationsAiFile`
