@@ -42,8 +42,10 @@ Get-PollinationsAiByok -Add
 
 Always, raw from the REST call
 ```
-Headers  - object, anything the API responed with
-Content  - object, the response headers form the API
+Headers     - object, anything the API responed with
+Content     - object, the response headers form the API
+StatusCode  - int, the status code of the response. Only useful, if you use `-ErrorAction SilentlyContinue`
+                   like: `gc .\many_hashes.txt | Get-PollinationsAiFile -Save -Details -ErrorAction SilentlyContinue |% { Write-Host "$($_.hash) -> $( if ($_.error) {$_.error.message} else {$_.filePath} )" }`
 ```
 
 Always: 
@@ -58,6 +60,26 @@ Depending on the cmdlet:
 contentType  - string, only with: Add, Get, Test
 duplicate    - boolean, only with: Add
 size         - int, only with: add, Get, Test
+filePath     - string, only with: Get
 success      - boolean, only with: Test
 deleted      - boolean, only with: Remove
+error        - {Message, StatusCode, Uri, ResponseInstance}, only exists in case of an error, only with: Get
 ```
+
+# `Get-PollinationsAiFile`
+```ps1
+Get-PollinationsAiFile [-Hash] <string> [-POLLINATIONSAI_API_KEY <string>]
+Get-PollinationsAiFile [-Hash] <string> -Details [-POLLINATIONSAI_API_KEY <string>]
+Get-PollinationsAiFile [-Hash] <string> -Save [-POLLINATIONSAI_API_KEY <string>] [-Details]
+Get-PollinationsAiFile [-Hash] <string> -Out <string> [-POLLINATIONSAI_API_KEY <string>] [-Details]
+```
+
+| arg | default | example | desc |
+| --- | --- | --- | --- |
+| `-Hash <string>` | | `98dxd8x473x9ex21` | The Hash (ID) of the file to refer to |
+| `-POLLINATIONSAI_API_KEY <string>` <br>or `-key <string>` | `$env:POLLINATIONSAI_API_KEY` | `sk_12345678901234567890` | Use a PollonationsAI API Key - if left set to "", `$env:POLLINATIONSAI_API_KEY` is being checked. **Note: Add the API key to your environment variables.** |
+| `-Out <string>` | | `acat.jpg` | The local path to save the generated image and returns the path. |
+| `-Save` | | | Will save to the system temp folder and returns the path. |
+| `-Details` | | | Does not save the file and returns `@{ Headers; Content; uri; [filePath] ... }` (`filePath` only if `-save` or `-out` was used)|
+
+
