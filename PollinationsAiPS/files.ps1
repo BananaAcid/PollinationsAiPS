@@ -15,7 +15,7 @@ Function Add-PollinationsAiFile {
     [CmdletBinding()]
     param(
         [string]
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)]
         $Path,
         
         [string]
@@ -218,7 +218,7 @@ Function Get-PollinationsAiFile {
 Function Remove-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Hash,
+        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)][string]$Hash,
         [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
         [switch]$Details
     )
@@ -277,7 +277,7 @@ Function Remove-PollinationsAiFile {
 Function Export-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Hash,
+        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)][string]$Hash,
         [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
         [switch]$Details
     )
@@ -314,7 +314,7 @@ Function Export-PollinationsAiFile {
 Function Test-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Hash,
+        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)][string]$Hash,
         [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
         [switch]$Details
     )
