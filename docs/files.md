@@ -50,6 +50,8 @@ Get-PollinationsAiByok -Add
 
 **Note:** `-POLLINATIONSAI_API_KEY` alias: `-Key`
 
+**Note:** The returned Content-Type might be wrongly reported by the Pollinations API: `application/x-www-form-urlencoded` instead of `application/octet-stream` for unknown file types.
+
 > [!IMPORTANT]
 > On an error, you can check `$global:LASTEXITCODE` for the HTTP Status code of the last request to the PollinationsAI REST API endpoint.
 >
