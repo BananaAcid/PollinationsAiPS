@@ -168,17 +168,19 @@ Function Get-PollinationsAiFile {
             if ($response.Headers["Content-Type"] -eq "image/jpeg" -and -not $filepath.EndsWith(".jpg", [System.StringComparison]::OrdinalIgnoreCase)) {
                 $filepath += ".jpg"
             }
-            # png and others, like video
-            if ($response.Headers["Content-Type"] -eq "application/x-www-form-urlencoded" -and $out -eq "") {
 
+            # unknown file type - results in this form encoded -- it should be application/octet-stream
+            if (($response.Headers["Content-Type"] -eq "application/x-www-form-urlencoded" -or $response.Headers["Content-Type"] -eq "application/octet-stream") -and $out -eq "") {
+                
                 $ext = script:Get-FileTypeFromBytes $response.Content
                 if ($ext) {
                     $filepath += "." + $ext
                 }
                 else {
-                    Write-Warning "PollinationsAI API returned a wrong Content-Type of 'application/x-www-form-urlencoded' and no filename was provided, the file type can not be determined - no extension added. Use -Out parameter to specify the filename."
+                    Write-Warning "PollinationsAI API returned for file '$Hash' a wrong Content-Type of '$($response.Headers["Content-Type"])' and no filename was provided, the file type can not be determined - no extension added. Use -Out parameter to specify the filename."
                 }
             }
+            # png and others, like video
             elseif ($Null -eq (Split-Path $filepath -Leaf).Split(".")[1]) { #PWSH 6+ "" -eq (Split-Path $filepath -Leaf | Split-Path -Extension)
                 $type = $response.Headers["Content-Type"] -split ";" | Select -First 1 |% { $_ -split "/"} | Select -Last 1
                 $filepath += "." + $type
