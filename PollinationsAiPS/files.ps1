@@ -176,7 +176,7 @@ Function Get-PollinationsAiFile {
                     $filepath += "." + $ext
                 }
                 else {
-                    Write-Warning "Error: PollinationsAI API returned a wrong Content-Type of 'application/x-www-form-urlencoded' and no filename was provided, the file type can not be determined - no extension added. Use -Out parameter to specify the filename."
+                    Write-Warning "PollinationsAI API returned a wrong Content-Type of 'application/x-www-form-urlencoded' and no filename was provided, the file type can not be determined - no extension added. Use -Out parameter to specify the filename."
                 }
             }
             elseif ($Null -eq (Split-Path $filepath -Leaf).Split(".")[1]) { #PWSH 6+ "" -eq (Split-Path $filepath -Leaf | Split-Path -Extension)
