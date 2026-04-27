@@ -87,7 +87,7 @@ Get-PollinationsAiByok -Init
 >
 > ---
 >
-> On an error, you can check `$global:LASTEXITCODE` for the HTTP Status code of the last request to the PollinationsAI REST API Endpoint.
+> On an error, you can check `$global:LASTEXITCODE` for the HTTP Status code of the last request to the PollinationsAI REST API endpoint.
 >
 > ---
 > ### Update-Wallpaper - Periodically recolor your desktop wallpaper with AI

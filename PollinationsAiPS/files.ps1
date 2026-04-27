@@ -4,7 +4,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingCmdletAliases', '', Scope = 'Function', Target = '*')] # allow aliases
 [CmdletBinding()] # allow -Debug
 Param() # no parameters, but required
-$script:DoDebug = $DebugPreference # for internal use - activate in all functions ("inherited" from parent (this) script)
+$script:DoDebug = $DebugPreference # for internal use - activate in all functions ("inherited" from parent (this) script) - to use: `. .\files.ps1 -Debug`
 Write-Debug "Loading PollinationsAiPS/files.ps1"
 
 
@@ -29,13 +29,18 @@ Function Add-PollinationsAiFile {
     begin {
         $global:LASTEXITCODE = 0
         if ($script:DoDebug) { $DebugPreference = $script:DoDebug }
-        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" }
+        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" ; return $null }
     }
 
     process {
         if (-not (Test-Path $Path -PathType Leaf)) {
             throw "Cannot find file path '$Path'. Only local file paths are supported for raw binary upload."
             return $null # in case of -ErrorAction SilentlyContinue
+        }
+
+        if ((Get-Item $Path).Length -le 10MB) {
+            throw "File size max is 10MB"
+            return $null
         }
 
         $localPath = Resolve-Path $Path
@@ -45,14 +50,14 @@ Function Add-PollinationsAiFile {
         $uri = "$($script:BaseUri)/upload"
         $headers = @{ Authorization = "Bearer $POLLINATIONSAI_API_KEY" }
 
-        $response,$err = script:IWR -Uri $uri -Method Post -Headers $headers -InFile $localPath -filterTextHeaders $false # we expect JSON
+        $response,$err,$json = script:IWR -Uri $uri -Method Post -Headers $headers -InFile $localPath -filterTextHeaders $false # we expect JSON
 
         $url = $null
         $contentJson = @{}
-        if (-not $response.error) {
+        if (-not $err) {
             Write-Debug "File uploaded successfully"
 
-            $contentJson = $response.Content | ConvertFrom-Json
+            $contentJson = $json
             $url = if ($contentJson.url) { $contentJson.url.ToString().Trim() } else { $response.Content.Trim() }
         }
 
@@ -77,7 +82,7 @@ Function Add-PollinationsAiFile {
                 $ret = $null # in case of -ErrorAction SilentlyContinue
             }
             else {
-                ret = $url
+                $ret = $url
             }
         }
 
@@ -123,6 +128,7 @@ Function Get-PollinationsAiFile {
     begin {
         $global:LASTEXITCODE = 0
         if ($script:DoDebug) { $DebugPreference = $script:DoDebug }
+        #? OPTIONAL:  if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" ; return $null }
     }
 
     process {
@@ -132,7 +138,7 @@ Function Get-PollinationsAiFile {
         $uri = "$($script:BaseUri)/$Hash"
 
         $ret = ""
-        $response,$err = script:IWR -Uri $uri -Method Get -Headers $headers
+        $response,$err,$json = script:IWR -Uri $uri -Method Get -Headers $headers
         
 
         $filepath = $null
@@ -218,149 +224,179 @@ Function Get-PollinationsAiFile {
 Function Remove-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)][string]$Hash,
-        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
-        [switch]$Details
+        [string]
+        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)]
+        $Hash,
+
+        [string]
+        [Alias("key")]
+        $POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        
+        [switch]
+        $Details
     )
 
     begin {
         $global:LASTEXITCODE = 0
         if ($script:DoDebug) { $DebugPreference = $script:DoDebug }
-        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" }
+        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" ; return $null }
     }
 
     process {
         $headers = @{ "Content-Type" = "application/json"; Authorization = "Bearer $POLLINATIONSAI_API_KEY" }
-        $uri = "https://media.pollinations.ai/$Hash"
+        $uri = "$($script:BaseUri)/$Hash"
 
-        try {
-            $response = Invoke-WebRequest -Uri $uri -Method Delete -Headers $headers -ErrorAction Stop
-            if ($Details) { 
-                $contentJson = $response.Content | ConvertFrom-Json
-                return @{
-                    deleted = $contentJson.deleted
-                    id = $contentJson.id # API is missing heders: X-Content-Hash,X-Content-Size - but provides Content.id
-                    hash = $Hash
-                    uri = $uri
-                    Headers = $response.Headers
-                    Content = $response.Content
-                    StatusCode = $response.StatusCode
-                } 
-            } 
-            else { return $true }
-        } 
-        catch {
-            $global:LASTEXITCODE = $_.Exception.Response.StatusCode
+        $response,$err,$json = script:IWR -Uri $uri -Method Delete -Headers $headers -ErrorAction SilentlyContinue -filterTextHeaders $false # we expect JSON, we WANT the error info
 
-            if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
-                if ($Details) { 
-                    $contentJson = $_.Exception.Response.Content | ConvertFrom-Json
-                    return @{
-                        deleted = $contentJson.deleted -or $false
-                        id = $contentJson.id -or $Hash
-                        hash = $Hash
-                        uri = $uri
-                        Headers = $_.Exception.Response.Headers
-                        Content = $_.Exception.Response.Content
-                        StatusCode = $_.Exception.Response.StatusCode.value__
-                    } 
-                } 
-                else { return $false }
-            } 
-            else { throw $_ }
+        $contentJson = @{}
+        if (-not $err) {
+            $contentJson = $json
+            Write-Debug "File deleted: $($contentJson.deleted)"
         }
+
+        if ($Details) { 
+            $ret = @{
+                deleted = $contentJson.deleted
+                id = $contentJson.id
+                hash = if ($contentJson.id) { $contentJson.id } else { $Hash }
+                uri = $uri
+                Headers = $response.Headers
+                Content = $response.Content
+                StatusCode = $response.StatusCode
+            }
+            if ($err) { $ret += @{ error = $err} }
+        }
+        else {
+            if ($err) {
+                $ret = $false
+            }
+            else {
+                $ret = $true
+            }
+        }
+
+        return $ret
     }
 }
 
 
-#! ENDPOINT BUGGY - So no 404 handling yet.
+#! ENDPOINT BUGGY - https://github.com/pollinations/pollinations/pull/10449
 Function Export-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)][string]$Hash,
-        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
-        [switch]$Details
+        [string]
+        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)]
+        $Hash,
+        
+        [string]
+        [Alias("key")]
+        $POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+        
+        [switch]
+        $Details
     )
 
     begin {
         $global:LASTEXITCODE = 0
         if ($script:DoDebug) { $DebugPreference = $script:DoDebug }
+        #? OPTIONAL:  if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" ; return $null }
     }
 
     process {
         $headers = @{ "Content-Type" = "application/json" }
         if ($POLLINATIONSAI_API_KEY) { $headers += @{Authorization = "Bearer $POLLINATIONSAI_API_KEY"} }
 
-        $uri = "https://media.pollinations.ai/$Hash/metadata"
-        try {
-            $response = Invoke-WebRequest -Uri $uri -Method Get -Headers $headers -ErrorAction Stop
-            if ($Details) {
-                return @{
-                    id = $Hash
-                    hash = $Hash
-                    uri = $uri
-                    Headers = $response.Headers
-                    Content = $response.Content
-                    StatusCode = $response.StatusCode
-                }
+        $uri = "$($script:BaseUri)/$Hash/metadata"
+
+        $response,$err,$json = script:IWR -Uri $uri -Method Get -Headers $headers -ErrorAction SilentlyContinue -filterTextHeaders $false # we expect JSON, we WANT the error info
+
+        if ($Details) {
+            $ret = @{
+                id = $Hash
+                hash = $Hash
+                uri = $uri
+                Headers = $response.Headers
+                Content = $response.Content
+                data = $json
+                StatusCode = $response.StatusCode
             }
-            else { return ($response.Content | ConvertFrom-Json) }
+            if ($err) { $ret += @{ error = $err} }
         }
-        catch { throw $_ }
+        else {
+            if ($err -and $err.StatusCode -eq 404) {   # file not found info
+                $ret = $false
+            }
+            elseif ($err) {         # not a file info -> auth or something else
+                $ret = $null
+            }
+            else {
+                $ret = $json
+            }
+        }
+
+        return $ret
     }
+
 }
 
 
 Function Test-PollinationsAiFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)][string]$Hash,
-        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
-        [switch]$Details
+        [string]
+        [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true)]
+        $Hash,
+
+        [string]
+        [Alias("key")]
+        $POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
+
+        [switch]
+        $Details
     )
 
     begin {
         $global:LASTEXITCODE = 0
         if ($script:DoDebug) { $DebugPreference = $script:DoDebug }
-        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" }
+        #? OPTIONAL:  if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" ; return $null }
     }
 
     process {
-        $uri = "https://media.pollinations.ai/$Hash"
-        try {
-            $response = Invoke-WebRequest -Uri $uri -Method Head -UseBasicParsing -ErrorAction Stop
-            if ($Details) { 
-                return @{
-                    success = $true
-                    id = $Hash # API is missing headers: X-Content-Hash,X-Content-Size
-                    hash = $Hash
-                    uri = $uri
-                    contentType = $response.Headers.'Content-Type'
-                    contentLength = $response.Headers.'Content-Length'
-                    Headers = $response.Headers
-                    StatusCode = $response.StatusCode
-                } 
+        $headers = @{ "Content-Type" = "application/json" }
+        if ($POLLINATIONSAI_API_KEY) { $headers += @{Authorization = "Bearer $POLLINATIONSAI_API_KEY"} }
+
+        $uri = "$($script:BaseUri)/$Hash"
+
+        $response,$err,$json = script:IWR -Uri $uri -Method Head -Headers $headers -ErrorAction SilentlyContinue # we WANT the error info
+
+        Write-Debug "File $Hash exists: $(-not $err)"
+
+        if ($Details) { 
+            $ret = @{
+                success = (-not $err)
+                id = $Hash # API is missing headers: X-Content-Hash,X-Content-Size
+                hash = $Hash
+                uri = $uri
+                contentType = if (-not $err) { $response.Headers.'Content-Type' }
+                contentLength = if (-not $err) { $response.Headers.'Content-Length' }
+                Headers = $response.Headers
+                StatusCode = $response.StatusCode
             }
-            else { return $true }
+            if ($err) { $ret += @{ error = $err} }
         }
-        catch {
-            if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
-                if ($Details) { 
-                    return @{
-                        success = $false
-                        id = $Hash # API is missing headers: X-Content-Hash,X-Content-Size
-                        hash = $Hash
-                        uri = $uri
-                        contentType = $_.Exception.Response.Headers.'Content-Type'
-                        contentLength = $_.Exception.Response.Headers.'Content-Length'
-                        Headers = $_.Exception.Response.Headers
-                        StatusCode = $_.Exception.Response.StatusCode.value__
-                    } 
-                }
-                else { return $false }
+        else {
+            if ($err -and $err.StatusCode -eq 404) {   # file not found info
+                $ret = $false
             }
-            else { throw $_ }
+            elseif ($err) {         # not a file info -> auth or something else
+                $ret = $null
+            }
+            else {
+                $ret = $true   # file found info
+            }
         }
+
+        return $ret
     }
 }
 
@@ -370,14 +406,12 @@ Function Get-PollinationsAiEncodedImage {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)][string]$Path,
-        [string][Alias("key")]$POLLINATIONSAI_API_KEY = $env:POLLINATIONSAI_API_KEY,
         [switch]$Details
     )
 
     begin {
         $global:LASTEXITCODE = 0
         if ($script:DoDebug) { $DebugPreference = $script:DoDebug }
-        if (-not $POLLINATIONSAI_API_KEY) { throw "⚠️  POLLINATIONSAI API KEY is missing! (-key or -POLLINATIONSAI_API_KEY or set `$env:POLLINATIONSAI_API_KEY=`"sk_...`")" }
     }
 
     process {
@@ -398,6 +432,8 @@ Function Get-PollinationsAiEncodedImage {
             if ($bytes[0] -eq 0x42 -and $bytes[1] -eq 0x4D) { $type = "bmp" }
 
             if ($type -eq "") { throw "File is not an jpeg/png/bmp image!" }
+
+            Write-Debug "Image type: $type"
 
             # content
             $content = "data:image/$type;base64,$encodedImage"
@@ -592,7 +628,7 @@ Function script:IWR {
 
     if ($script:DoDebug) { $DebugPreference = $script:DoDebug }
 
-    Write-Debug "URI: $uri"
+    Write-Debug "Request $Method $uri"
 
     
     # prepare additional (known) parameters, if needed
@@ -615,8 +651,30 @@ Function script:IWR {
             $response = Invoke-WebRequest -Uri $Uri -Method $Method -Headers $Headers   @params   -UseBasicParsing     -ErrorAction Stop
         }
         catch {
-            # no message from content possible on error ...
-            $response = @{ StatusCode = $_.Exception.Response.StatusCode.Value__; Message = $_.Exception.Response.StatusCode }
+            # no message from content possible on error in PS 5.1 ... Headers are just the keynames and no values
+            #$response = @{ StatusCode = $_.Exception.Response.StatusCode.Value__; Message = $_.Exception.Response.StatusCode; Headers = $_.Exception.Response.Headers }
+            
+            # get the content properly and extract headers ---------
+            $stream = $_.Exception.Response.GetResponseStream()
+            if ($stream.CanSeek) { $stream.Position = 0 }
+
+            # Read into a MemoryStream to get all bytes
+            $memoryStream = New-Object System.IO.MemoryStream
+            $stream.CopyTo($memoryStream)
+            $bytes = $memoryStream.ToArray()
+            $memoryStream.Dispose()
+            $contentString = [System.Text.Encoding]::UTF8.GetString($bytes)
+            
+            # Extract Headers properly, WebHeaderCollection -> Hashtable
+            $headers = @{}
+            foreach ($key in $_.Exception.Response.Headers.AllKeys) { $headers[$key] = $_.Exception.Response.Headers[$key] }
+
+            $response = [PSCustomObject]@{
+                StatusCode = [int]$_.Exception.Response.StatusCode
+                Content    =  $contentString
+                #RawBytes   = $bytes         # The binary version
+                Headers    = $headers
+            }
         }
     }
 
@@ -626,16 +684,16 @@ Function script:IWR {
         Write-Debug "Error status code: $($response.StatusCode)"
         if ($response.Content -and $response.Headers["Content-Type"] -like "application/json") {
             $content = $response.Content | ConvertFrom-Json
-            $err = @{
+            $err = [PSCustomObject]@{
                 StatusCode = if ($content.status) {$content.status} else {$response.StatusCode}
-                Message = if ($content.error.message) {$content.error.message} else {$content.error}
+                Message = if ($content.error -and $content.error.message) {$content.error.message} else {$content.error}
                 ResponseInstance = $response
             }
         }
         else {
-            $err = @{
+            $err = [PSCustomObject]@{
                 StatusCode = $response.StatusCode
-                Message = $response.content
+                Message = $response.Content
                 Uri = $Uri
                 ResponseInstance = $response
             }
@@ -646,12 +704,12 @@ Function script:IWR {
 
         # set error code
         $global:LASTEXITCODE = $err.StatusCode
-        throw [PSCustomObject]$err
+        throw $err
     }
     # API is broken - Status code 200, but there is an error message in the content
     elseif ($filterTextHeaders -and ($response.Headers["Content-Type"] -like "text/*" -or $response.Headers["Content-Type"] -like "application/json")) {
         Write-Debug "Error unexpected content with content type: $($response.Headers["Content-Type"])"
-        $err = @{
+        $err = [PSCustomObject]@{
             StatusCode = $response.StatusCode
             Message = "Unexpected content with content type: " + $response.Headers["Content-Type"]
             Uri = $Uri
@@ -664,22 +722,25 @@ Function script:IWR {
 
         # set error code
         $global:LASTEXITCODE = 200
-        throw [PSCustomObject]$err
+        throw $err
+    }
+
+    # check for JSON, if $filterTextHeaders is false or -ErrorAction is SilentlyContinue
+    $json = $null
+    if ($response.Headers["Content-Type"] -like "application/json") {
+        $json = $response.Content | ConvertFrom-Json
     }
 
     # application/x-www-form-urlencoded  .... storage api returns this
+    # ... the content is bytes (currently)
 
-    return $response, $err
+    return $response, $err, $json
 }
 
 
-
-
-
-
-
-# ---  Get file extension from bytes - Advanced Windows version or simple fallback ---
-
+<#
+    Get file extension from bytes - Advanced Windows version or simple fallback
+#>
 Function script:Get-FileTypeFromBytes {
     param (
         [byte[]]$Content
