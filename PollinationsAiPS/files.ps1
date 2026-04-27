@@ -395,8 +395,9 @@ Function Get-PollinationsAiEncodedImage {
             if ($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xD8 -and $bytes[2] -eq 0xFF -and $bytes[3] -eq 0xE1) { $type = "jpeg" }
             if ($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xD8 -and $bytes[2] -eq 0xFF -and $bytes[3] -eq 0xE2) { $type = "jpeg" }
             if ($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xD8 -and $bytes[2] -eq 0xFF -and $bytes[3] -eq 0xE3) { $type = "jpeg" }
+            if ($bytes[0] -eq 0x42 -and $bytes[1] -eq 0x4D) { $type = "bmp" }
 
-            if ($type -eq "") { throw "File is not an jpeg/png image!" }
+            if ($type -eq "") { throw "File is not an jpeg/png/bmp image!" }
 
             # content
             $content = "data:image/$type;base64,$encodedImage"
